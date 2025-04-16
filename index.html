@@ -7,46 +7,36 @@
   <link rel="stylesheet" href="style.css" />
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+  
+  <!-- Import Maps - this is the key addition -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/webxr/XRHandModelFactory": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js",
+        "three/examples/jsm/webxr/VRButton": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js"
+      }
+    }
+  </script>
+  
+  <!-- For browsers that don't support import maps -->
+  <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 </head>
 <body>
   <canvas id="xr-canvas"></canvas>
-  <!-- Add a loading indicator and error message area -->
   <div id="loading">Loading Three.js...</div>
   <div id="error" style="color: red; display: none;"></div>
   
   <script>
-    // Error handling for module loading issues
+    // Error handling
     window.addEventListener('error', function(event) {
-      console.error('Error occurred:', event.error);
-      document.getElementById('error').textContent = 'Error loading modules: ' + event.error.message;
+      console.error('Error:', event.error);
+      document.getElementById('error').textContent = 'Error: ' + event.error.message;
       document.getElementById('error').style.display = 'block';
     });
   </script>
   
-  <script type="module">
-    // Test import to see if modules are working
-    try {
-      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js')
-        .then(() => {
-          console.log('Three.js module loaded successfully');
-          document.getElementById('loading').style.display = 'none';
-          // Now load the main script
-          import('./main.js').catch(err => {
-            console.error('Error loading main.js:', err);
-            document.getElementById('error').textContent = 'Error loading main.js: ' + err.message;
-            document.getElementById('error').style.display = 'block';
-          });
-        })
-        .catch(err => {
-          console.error('Error loading Three.js:', err);
-          document.getElementById('error').textContent = 'Error loading Three.js: ' + err.message;
-          document.getElementById('error').style.display = 'block';
-        });
-    } catch (err) {
-      console.error('Syntax error in import code:', err);
-      document.getElementById('error').textContent = 'Syntax error: ' + err.message;
-      document.getElementById('error').style.display = 'block';
-    }
-  </script>
+  <!-- Load main script as a module -->
+  <script type="module" src="main.js"></script>
 </body>
 </html>

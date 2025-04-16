@@ -1,7 +1,7 @@
-// Import Three.js with full URL and integrity hash for better caching
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { XRHandModelFactory } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js';
-import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js';
+// With import maps, we can use bare specifiers
+import * as THREE from 'three';
+import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 
 let scene, camera, renderer;
 let panel, cube;
