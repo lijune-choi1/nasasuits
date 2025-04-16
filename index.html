@@ -8,13 +8,14 @@
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
   
-  <!-- Import Maps - this is the key addition -->
+  <!-- Import Maps - maps bare specifiers to URLs -->
   <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/examples/jsm/webxr/XRHandModelFactory": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js",
-        "three/examples/jsm/webxr/VRButton": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js"
+        "three/examples/jsm/webxr/VRButton": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js"
       }
     }
   </script>
@@ -24,8 +25,8 @@
 </head>
 <body>
   <canvas id="xr-canvas"></canvas>
-  <div id="loading">Loading Three.js...</div>
-  <div id="error" style="color: red; display: none;"></div>
+  <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white;">Loading Three.js...</div>
+  <div id="error" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; display: none;"></div>
   
   <script>
     // Error handling
@@ -33,6 +34,11 @@
       console.error('Error:', event.error);
       document.getElementById('error').textContent = 'Error: ' + event.error.message;
       document.getElementById('error').style.display = 'block';
+    });
+    
+    // Hide loading indicator when the document is fully loaded
+    window.addEventListener('load', function() {
+      document.getElementById('loading').style.display = 'none';
     });
   </script>
   
