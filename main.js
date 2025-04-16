@@ -14,11 +14,184 @@ let pinchLine;
 let distanceText;
 let distanceTextMesh;
 
+// Mock hand objects for desktop testing
+let mockIndexFinger, mockThumb;
+
 // Initialize the scene
 init();
 
 // Start the animation loop
 animate();
+
+// Debug visuals for pinch distance
+function createDebugVisuals() {
+  // Create line between index and thumb
+  const lineMaterial = new THREE.LineBasicMaterial({
+    color: 0xffff00,
+    linewidth: 2
+  });
+  const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, 0)
+  ]);
+  pinchLine = new THREE.Line(lineGeometry, lineMaterial);
+  scene.add(pinchLine);
+  
+  // Create distance text
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+  context.fillStyle = 'white';
+  context.font = '24px Arial';
+  context.textAlign = 'center';
+  context.fillText('Distance: 0.00 cm', 128, 64);
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const geometry = new THREE.PlaneGeometry(0.2, 0.1);
+  distanceTextMesh = new THREE.Mesh(geometry, material);
+  distanceTextMesh.position.set(0, 1.7, -0.8);
+  scene.add(distanceTextMesh);
+  
+  distanceText = {
+    canvas: canvas,
+    context: context,
+    texture: texture
+  };
+}
+
+function updatePinchDistanceVisual(indexPos, thumbPos, distance) {
+  if (!pinchLine || !debugVisuals) return;
+  
+  // Update line position
+  const points = [
+    new THREE.Vector3(indexPos.x, indexPos.y, indexPos.z),
+    new THREE.Vector3(thumbPos.x, thumbPos.y, thumbPos.z)
+  ];
+  pinchLine.geometry.setFromPoints(points);
+  
+  // Update text
+  const distanceInCm = distance * 100; // Convert to cm
+  distanceText.context.clearRect(0, 0, distanceText.canvas.width, distanceText.canvas.height);
+  distanceText.context.fillStyle = distanceInCm < 2 ? 'green' : 'white';
+  distanceText.context.font = '24px Arial';
+  distanceText.context.textAlign = 'center';
+  distanceText.context.fillText(`Distance: ${distanceInCm.toFixed(2)} cm`, 128, 64);
+  distanceText.texture.needsUpdate = true;
+  
+  // Position text between finger and thumb
+  const midpoint = new THREE.Vector3().addVectors(
+    new THREE.Vector3(indexPos.x, indexPos.y, indexPos.z),
+    new THREE.Vector3(thumbPos.x, thumbPos.y, thumbPos.z)
+  ).multiplyScalar(0.5);
+  midpoint.y += 0.05; // Position slightly above the fingers
+  distanceTextMesh.position.copy(midpoint);
+  distanceTextMesh.lookAt(camera.position);
+}
+
+// Mock hand functions
+function createMockHands() {
+  // Create a simple representation of an index finger
+  mockIndexFinger = new THREE.Mesh(
+    new THREE.SphereGeometry(0.01, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+  );
+  mockIndexFinger.position.set(0.05, 1.5, -0.8);
+  scene.add(mockIndexFinger);
+  
+  // Create a simple representation of a thumb
+  mockThumb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.01, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0x0000ff })
+  );
+  mockThumb.position.set(-0.05, 1.5, -0.8);
+  scene.add(mockThumb);
+  
+  // Create line between fingers for visualization
+  createDebugVisuals();
+}
+
+function bringMockHandsTogether() {
+  // Animate the mock fingers coming together
+  const duration = 500; // milliseconds
+  const startTime = Date.now();
+  const startPositions = {
+    index: mockIndexFinger.position.clone(),
+    thumb: mockThumb.position.clone()
+  };
+  const targetPositions = {
+    index: new THREE.Vector3(0.01, 1.5, -0.8),
+    thumb: new THREE.Vector3(-0.01, 1.5, -0.8)
+  };
+  
+  function animateFingers() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    mockIndexFinger.position.lerpVectors(startPositions.index, targetPositions.index, progress);
+    mockThumb.position.lerpVectors(startPositions.thumb, targetPositions.thumb, progress);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateFingers);
+    }
+  }
+  
+  animateFingers();
+}
+
+function moveMockHandsApart() {
+  // Animate the mock fingers moving apart
+  const duration = 500; // milliseconds
+  const startTime = Date.now();
+  const startPositions = {
+    index: mockIndexFinger.position.clone(),
+    thumb: mockThumb.position.clone()
+  };
+  const targetPositions = {
+    index: new THREE.Vector3(0.05, 1.5, -0.8),
+    thumb: new THREE.Vector3(-0.05, 1.5, -0.8)
+  };
+  
+  function animateFingers() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    mockIndexFinger.position.lerpVectors(startPositions.index, targetPositions.index, progress);
+    mockThumb.position.lerpVectors(startPositions.thumb, targetPositions.thumb, progress);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateFingers);
+    }
+  }
+  
+  animateFingers();
+}
+
+// Utility to detect pinch between thumb and index tip
+function isPinching(hand, referenceSpace) {
+  const indexTip = hand.getJointPose(hand.joints['index-finger-tip'], referenceSpace);
+  const thumbTip = hand.getJointPose(hand.joints['thumb-tip'], referenceSpace);
+
+  if (!indexTip || !thumbTip) return false;
+
+  const dx = indexTip.transform.position.x - thumbTip.transform.position.x;
+  const dy = indexTip.transform.position.y - thumbTip.transform.position.y;
+  const dz = indexTip.transform.position.z - thumbTip.transform.position.z;
+  const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  return distance < 0.02; // less than 2cm = pinch
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 function init() {
   // Create scene
@@ -165,178 +338,6 @@ function init() {
   }
 }
 
-// Mock hand objects for desktop testing
-let mockIndexFinger, mockThumb;
-
-function createMockHands() {
-  // Create a simple representation of an index finger
-  mockIndexFinger = new THREE.Mesh(
-    new THREE.SphereGeometry(0.01, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0xff0000 })
-  );
-  mockIndexFinger.position.set(0.05, 1.5, -0.8);
-  scene.add(mockIndexFinger);
-  
-  // Create a simple representation of a thumb
-  mockThumb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.01, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0x0000ff })
-  );
-  mockThumb.position.set(-0.05, 1.5, -0.8);
-  scene.add(mockThumb);
-  
-  // Create line between fingers for visualization
-  createDebugVisuals();
-}
-
-function bringMockHandsTogether() {
-  // Animate the mock fingers coming together
-  const duration = 500; // milliseconds
-  const startTime = Date.now();
-  const startPositions = {
-    index: mockIndexFinger.position.clone(),
-    thumb: mockThumb.position.clone()
-  };
-  const targetPositions = {
-    index: new THREE.Vector3(0.01, 1.5, -0.8),
-    thumb: new THREE.Vector3(-0.01, 1.5, -0.8)
-  };
-  
-  function animateFingers() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    
-    mockIndexFinger.position.lerpVectors(startPositions.index, targetPositions.index, progress);
-    mockThumb.position.lerpVectors(startPositions.thumb, targetPositions.thumb, progress);
-    
-    if (progress < 1) {
-      requestAnimationFrame(animateFingers);
-    }
-  }
-  
-  animateFingers();
-}
-
-function moveMockHandsApart() {
-  // Animate the mock fingers moving apart
-  const duration = 500; // milliseconds
-  const startTime = Date.now();
-  const startPositions = {
-    index: mockIndexFinger.position.clone(),
-    thumb: mockThumb.position.clone()
-  };
-  const targetPositions = {
-    index: new THREE.Vector3(0.05, 1.5, -0.8),
-    thumb: new THREE.Vector3(-0.05, 1.5, -0.8)
-  };
-  
-  function animateFingers() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    
-    mockIndexFinger.position.lerpVectors(startPositions.index, targetPositions.index, progress);
-    mockThumb.position.lerpVectors(startPositions.thumb, targetPositions.thumb, progress);
-    
-    if (progress < 1) {
-      requestAnimationFrame(animateFingers);
-    }
-  }
-  
-  animateFingers();
-}
-
-// Debug visuals for pinch distance
-function createDebugVisuals() {
-  // Create line between index and thumb
-  const lineMaterial = new THREE.LineBasicMaterial({
-    color: 0xffff00,
-    linewidth: 2
-  });
-  const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, 0)
-  ]);
-  pinchLine = new THREE.Line(lineGeometry, lineMaterial);
-  scene.add(pinchLine);
-  
-  // Create distance text
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
-  const context = canvas.getContext('2d');
-  context.fillStyle = 'white';
-  context.font = '24px Arial';
-  context.textAlign = 'center';
-  context.fillText('Distance: 0.00 cm', 128, 64);
-  
-  const texture = new THREE.CanvasTexture(canvas);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
-  const geometry = new THREE.PlaneGeometry(0.2, 0.1);
-  distanceTextMesh = new THREE.Mesh(geometry, material);
-  distanceTextMesh.position.set(0, 1.7, -0.8);
-  scene.add(distanceTextMesh);
-  
-  distanceText = {
-    canvas: canvas,
-    context: context,
-    texture: texture
-  };
-}
-
-function updatePinchDistanceVisual(indexPos, thumbPos, distance) {
-  if (!pinchLine || !debugVisuals) return;
-  
-  // Update line position
-  const points = [
-    new THREE.Vector3(indexPos.x, indexPos.y, indexPos.z),
-    new THREE.Vector3(thumbPos.x, thumbPos.y, thumbPos.z)
-  ];
-  pinchLine.geometry.setFromPoints(points);
-  
-  // Update text
-  const distanceInCm = distance * 100; // Convert to cm
-  distanceText.context.clearRect(0, 0, distanceText.canvas.width, distanceText.canvas.height);
-  distanceText.context.fillStyle = distanceInCm < 2 ? 'green' : 'white';
-  distanceText.context.font = '24px Arial';
-  distanceText.context.textAlign = 'center';
-  distanceText.context.fillText(`Distance: ${distanceInCm.toFixed(2)} cm`, 128, 64);
-  distanceText.texture.needsUpdate = true;
-  
-  // Position text between finger and thumb
-  const midpoint = new THREE.Vector3().addVectors(
-    new THREE.Vector3(indexPos.x, indexPos.y, indexPos.z),
-    new THREE.Vector3(thumbPos.x, thumbPos.y, thumbPos.z)
-  ).multiplyScalar(0.5);
-  midpoint.y += 0.05; // Position slightly above the fingers
-  distanceTextMesh.position.copy(midpoint);
-  distanceTextMesh.lookAt(camera.position);
-}
-
-// Utility to detect pinch between thumb and index tip
-function isPinching(hand, referenceSpace) {
-  const indexTip = hand.getJointPose(hand.joints['index-finger-tip'], referenceSpace);
-  const thumbTip = hand.getJointPose(hand.joints['thumb-tip'], referenceSpace);
-
-  if (!indexTip || !thumbTip) return false;
-
-  const dx = indexTip.transform.position.x - thumbTip.transform.position.x;
-  const dy = indexTip.transform.position.y - thumbTip.transform.position.y;
-  const dz = indexTip.transform.position.z - thumbTip.transform.position.z;
-  const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-  return distance < 0.02; // less than 2cm = pinch
-}
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
 function animate() {
   renderer.setAnimationLoop(() => {
     // Rotate the cube for visual interest
@@ -363,21 +364,19 @@ function animate() {
       }
     } 
     // Desktop testing mode
-    else if (desktopTestingEnabled) {
+    else if (desktopTestingEnabled && mockIndexFinger && mockThumb) {
       panel.visible = isPinchMode;
       
       // Update debug visuals in desktop mode
-      if (mockIndexFinger && mockThumb) {
-        const indexPos = mockIndexFinger.position;
-        const thumbPos = mockThumb.position;
-        
-        const dx = indexPos.x - thumbPos.x;
-        const dy = indexPos.y - thumbPos.y;
-        const dz = indexPos.z - thumbPos.z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        updatePinchDistanceVisual(indexPos, thumbPos, distance);
-      }
+      const indexPos = mockIndexFinger.position;
+      const thumbPos = mockThumb.position;
+      
+      const dx = indexPos.x - thumbPos.x;
+      const dy = indexPos.y - thumbPos.y;
+      const dz = indexPos.z - thumbPos.z;
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      
+      updatePinchDistanceVisual(indexPos, thumbPos, distance);
     }
 
     // If using OrbitControls, update them
