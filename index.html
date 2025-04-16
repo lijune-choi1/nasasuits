@@ -10,6 +10,43 @@
 </head>
 <body>
   <canvas id="xr-canvas"></canvas>
-  <script type="module" src="main.js"></script>
+  <!-- Add a loading indicator and error message area -->
+  <div id="loading">Loading Three.js...</div>
+  <div id="error" style="color: red; display: none;"></div>
+  
+  <script>
+    // Error handling for module loading issues
+    window.addEventListener('error', function(event) {
+      console.error('Error occurred:', event.error);
+      document.getElementById('error').textContent = 'Error loading modules: ' + event.error.message;
+      document.getElementById('error').style.display = 'block';
+    });
+  </script>
+  
+  <script type="module">
+    // Test import to see if modules are working
+    try {
+      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js')
+        .then(() => {
+          console.log('Three.js module loaded successfully');
+          document.getElementById('loading').style.display = 'none';
+          // Now load the main script
+          import('./main.js').catch(err => {
+            console.error('Error loading main.js:', err);
+            document.getElementById('error').textContent = 'Error loading main.js: ' + err.message;
+            document.getElementById('error').style.display = 'block';
+          });
+        })
+        .catch(err => {
+          console.error('Error loading Three.js:', err);
+          document.getElementById('error').textContent = 'Error loading Three.js: ' + err.message;
+          document.getElementById('error').style.display = 'block';
+        });
+    } catch (err) {
+      console.error('Syntax error in import code:', err);
+      document.getElementById('error').textContent = 'Syntax error: ' + err.message;
+      document.getElementById('error').style.display = 'block';
+    }
+  </script>
 </body>
 </html>
