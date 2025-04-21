@@ -202,13 +202,15 @@ setupVRSessionListeners() {
   lockInterfacePosition();
   // Add this to the setupVRSessionListeners method in main.js, right before the closing }
 
+// Add this to the setupVRSessionListeners method in main.js
+
 // Map button event listener
 const mapButton = document.getElementById('map-button');
 if (mapButton) {
   mapButton.addEventListener('click', () => {
     console.log('Map button clicked');
-    if (this.uiManager) {
-      this.uiManager.toggleMapWindow();
+    if (this.spaceEnvironment) {
+      this.spaceEnvironment.toggleMapWindow();
     }
   });
 }
@@ -217,8 +219,8 @@ if (mapButton) {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'KeyM') {
     console.log('Map key pressed');
-    if (this.uiManager) {
-      this.uiManager.toggleMapWindow();
+    if (this.spaceEnvironment) {
+      this.spaceEnvironment.toggleMapWindow();
     }
   }
 });
