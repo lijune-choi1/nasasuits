@@ -198,6 +198,47 @@ body {
 #VRButton:hover {
   background-color: rgba(50, 50, 50, 0.9) !important;
   transform: scale(1.05) !important;
+
+}
+
+.vr-action-buttons {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.action-button-row {
+  display: flex;
+  gap: 20px;
+  background: var(--bg-dark);
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+}
+
+.action-button .icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.action-button span {
+  font-size: 14px;
 }
 
 /* Mobile-specific adjustments */

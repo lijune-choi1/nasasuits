@@ -84,7 +84,11 @@ class NASASuitsApp {
   // Setup VR Session Listeners
   setupVRSessionListeners() {
     const spaceInterface = document.getElementById('space-interface');
-    
+    const actionButtons = document.getElementById('vr-action-buttons');
+    let actionButtonsVisible = false;
+    let pinchCount = 0;
+    let lastPinchTime = 0;
+  
     // Ensure the interface is always visible and positioned correctly
     const lockInterfacePosition = () => {
       if (spaceInterface) {
@@ -102,19 +106,77 @@ class NASASuitsApp {
         `;
       }
     };
-
+  
+    // Toggle action buttons visibility
+    const toggleActionButtons = () => {
+      if (actionButtons) {
+        actionButtonsVisible = !actionButtonsVisible;
+        actionButtons.style.display = actionButtonsVisible ? 'flex' : 'none';
+      }
+    };
+  
+    // Keyboard control for desktop testing
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        toggleActionButtons();
+      }
+    });
+  
+    // VR Pinch gesture detection
+    const checkPinchGesture = (hand) => {
+      if (!hand || !hand.joints) return false;
+      
+      const indexTip = hand.joints['index-finger-tip'];
+      const middleTip = hand.joints['middle-finger-tip'];
+      
+      if (!indexTip || !middleTip) return false;
+      
+      const distance = indexTip.position.distanceTo(middleTip.position);
+      return distance < 0.02; // 2cm threshold
+    };
+  
     // VR Session Start
     this.renderer.xr.addEventListener('sessionstart', () => {
       console.log('VR Session Started');
       lockInterfacePosition();
+  
+      // Hand tracking for gesture control
+      const session = this.renderer.xr.getSession();
+      session.addEventListener('inputsourceschange', (event) => {
+        const hands = event.inputSources.filter(source => source.hand);
+        
+        hands.forEach(hand => {
+          const isPinching = checkPinchGesture(hand.hand);
+          
+          if (isPinching) {
+            const now = Date.now();
+            if (now - lastPinchTime > 500) { // Prevent rapid firing
+              pinchCount++;
+              lastPinchTime = now;
+              
+              if (pinchCount === 2) {
+                toggleActionButtons();
+                pinchCount = 0;
+              }
+            }
+          }
+        });
+      });
     });
-
+  
     // VR Session End
     this.renderer.xr.addEventListener('sessionend', () => {
       console.log('VR Session Ended');
       lockInterfacePosition();
+      
+      // Reset button visibility
+      if (actionButtons) {
+        actionButtons.style.display = 'none';
+      }
+      actionButtonsVisible = false;
+      pinchCount = 0;
     });
-
+  
     // Initial lock (for non-VR mode as well)
     lockInterfacePosition();
   }
