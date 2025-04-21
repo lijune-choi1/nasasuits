@@ -1,9 +1,185 @@
+/* styles.css - NASA SUITS WebXR Application */
+
 body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #000;
-  }
-  canvas {
-    display: block;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Header information bar */
+#info {
+  position: absolute;
+  top: 10px;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-family: Arial, sans-serif;
+  padding: 5px;
+  pointer-events: none;
+  z-index: 100;
+  text-shadow: 0 0 5px black;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Loading indicator */
+#loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000;
+}
+
+/* Loading spinner animation */
+#loading .spinner {
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 5px solid white;
+  width: 50px;
+  height: 50px;
+  margin: 20px auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error message display */
+#error {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: #ff4444;
+  font-family: Arial, sans-serif;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  display: none;
+  z-index: 2000;
+  max-width: 80%;
+  border-left: 4px solid #ff4444;
+}
+
+/* VR Button styling (Three.js adds this) */
+#VRButton {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  border: 2px solid white !important;
+  color: white !important;
+  font-weight: bold !important;
+  transition: all 0.3s ease !important;
+}
+
+#VRButton:hover {
+  background-color: rgba(50, 50, 50, 0.9) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Debug info panel - hidden by default */
+#debug-panel {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  display: none;
+  z-index: 100;
+}
+
+/* Debug toggle button */
+#debug-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  z-index: 101;
+  font-size: 12px;
+}
+
+/* For non-WebXR compatible browsers */
+.webxr-warning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 80%;
+  z-index: 1001;
+}
+
+.webxr-warning button {
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.webxr-warning button:hover {
+  background-color: #1565c0;
+}
+
+/* Help tooltip */
+.help-tooltip {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  max-width: 300px;
+  font-size: 14px;
+  z-index: 100;
+  transition: opacity 0.3s ease;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  #info {
+    font-size: 14px;
   }
   
+  #loading {
+    font-size: 18px;
+    padding: 15px;
+  }
+  
+  #loading .spinner {
+    width: 30px;
+    height: 30px;
+    border-width: 3px;
+  }
+  
+  .help-tooltip {
+    max-width: 250px;
+    font-size: 12px;
+  }
+}

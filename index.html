@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NASA SUITS WebXR</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NASA SUITS - WebXR Spacesuit Interface</title>
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+  
+  <link rel="stylesheet" href="styles.css">
   
   <!-- Import Maps - maps bare specifiers to URLs -->
   <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/examples/jsm/webxr/XRHandModelFactory": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js",
-        "three/examples/jsm/webxr/VRButton": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js",
-        "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+        "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/webxr/VRButton.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js",
+        "three/examples/jsm/webxr/XRHandModelFactory.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js",
+        "three/examples/jsm/loaders/FontLoader.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/FontLoader.js",
+        "three/examples/jsm/geometries/TextGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js",
+        "three/examples/jsm/geometries/RoundedBoxGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js"
       }
     }
   </script>
@@ -24,9 +28,14 @@
   <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 </head>
 <body>
-  <canvas id="xr-canvas"></canvas>
-  <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white;">Loading Three.js...</div>
-  <div id="error" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; display: none;"></div>
+  <div id="info">NASA SUITS - WebXR Interface</div>
+  
+  <div id="loading">
+    <div>Loading NASA SUITS Interface</div>
+    <div class="spinner"></div>
+  </div>
+  
+  <div id="error"></div>
   
   <script>
     // Error handling
@@ -38,11 +47,16 @@
     
     // Hide loading indicator when the document is fully loaded
     window.addEventListener('load', function() {
-      document.getElementById('loading').style.display = 'none';
+      // We'll hide this from the main.js when everything is ready
+      // This just ensures it disappears even if there's an issue
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'none';
+      }, 5000);
     });
   </script>
   
-  <!-- Load main script as a module -->
+  <!-- Main application script -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
