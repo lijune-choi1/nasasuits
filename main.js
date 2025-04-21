@@ -527,12 +527,14 @@ class NASASuitsApp {
     
     // Add text
     if (subtext) {
+      console.log('subtext even passing?');
       // If we have subtext, the first part might be colored
       const textColor = text.includes("100m") ? "#FFCC00" : text.includes("15:00") ? "#00FF66" : "#FFFFFF";
       this.addTextToPanel(panel, text, -panelWidth/2 + 0.07, 0, 0.014, textColor);
       this.addTextToPanel(panel, subtext, -panelWidth/2 + 0.07 + text.length * 0.014, 0, 0.014, "#FFFFFF");
     } else {
       // Regular text
+      console.log('regular text even passing?');
       this.addTextToPanel(panel, text, -panelWidth/2 + 0.07, 0, 0.014, "#FFFFFF");
     }
     
@@ -540,44 +542,50 @@ class NASASuitsApp {
     return panel;
   }
   
-  // Add text to a panel using canvas texture
   addTextToPanel(parent, text, x, y, size, color) {
-    console.log('textppassing?');
-    // Create canvas for text
+    // Create canvas with fixed, larger size
     const canvas = document.createElement('canvas');
-    const textWidth = text.length * 25;
-    canvas.width = textWidth;
-    canvas.height = 50;
+    canvas.width = 512;  // Larger, consistent width
+    canvas.height = 128; // Larger, consistent height
     
     const context = canvas.getContext('2d');
-    context.fillStyle = 'transparent';
-    context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Set font and draw text
-    const fontSize = Math.floor(size * 1000);
-    context.font = `${fontSize}px Arial, sans-serif`;
-    context.textAlign = 'left';
+    // Clear with white background for debug, or leave transparent
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Set font with reasonable size
+    const fontSize = Math.floor(size * 100); // Scaled down
+    context.font = `bold ${fontSize}px Arial, sans-serif`;
+    
+    // Center text in canvas
+    context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = color || '#FFFFFF';
-    context.fillText(text, 0, canvas.height / 2);
     
-    // Create texture and mesh
+    // Ensure visible color
+    context.fillStyle = color || '#FFFFFF';
+    
+    // Draw text in center of canvas
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+    
+    // Create texture
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      depthWrite: false
+      opacity: 1
     });
     
-    const aspectRatio = canvas.width / canvas.height;
-    const height = size * 1.5;
-    const width = height * aspectRatio;
+    // More proportional sizing
+    const width = size * 2;
+    const height = width * (canvas.height / canvas.width);
     
     const geometry = new THREE.PlaneGeometry(width, height);
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x + width/2, y, 0.001);
+    
+    // Centered positioning
+    mesh.position.set(x, y, 0.001);
     
     parent.add(mesh);
     return mesh;
