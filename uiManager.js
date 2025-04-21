@@ -6,9 +6,12 @@ class UIManager {
     this.camera = camera;
     this.renderer = renderer;
     
+    // Create a separate UI scene that will be rendered after the main scene
+    this.uiScene = new THREE.Scene();
+    
     // Create UI container
     this.uiGroup = new THREE.Group();
-    this.scene.add(this.uiGroup);
+    this.uiScene.add(this.uiGroup);
     
     // Flag for map window visibility
     this.mapWindowVisible = false;
@@ -21,6 +24,26 @@ class UIManager {
     
     // Setup UI update method
     this.setupUITracking();
+    
+    // Override the renderer's render method to include our UI scene
+    this.setupUIRendering();
+  }
+  
+  // Override the renderer's render method to include UI rendering
+  setupUIRendering() {
+    // Store the original render method
+    const originalRenderMethod = this.renderer.render;
+    
+    // Create a new render method that renders both scenes
+    this.renderer.render = (scene, camera) => {
+      // First, render the main scene
+      originalRenderMethod.call(this.renderer, scene, camera);
+      
+      // Then, render the UI scene without clearing the buffer
+      this.renderer.autoClear = false;
+      originalRenderMethod.call(this.renderer, this.uiScene, camera);
+      this.renderer.autoClear = true;
+    };
   }
   
   // Create text texture for 3D panels
