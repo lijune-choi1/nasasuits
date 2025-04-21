@@ -114,13 +114,13 @@ class NASASuitsApp {
       }
     };
   
-    // Keyboard control for desktop testing
-    window.addEventListener('keydown', (event) => {
-      // Check if not in VR mode
-      if (!this.renderer.xr.isPresenting && event.code === 'Space') {
-        toggleActionButtons();
-      }
-    });
+       // Keyboard control for desktop testing
+      window.addEventListener('keydown', (event) => {
+        // Check if not in VR mode
+        if (!this.renderer.xr.isPresenting && event.code === 'KeyA') {
+          toggleActionButtons();
+        }
+      });
   
     // VR Pinch gesture detection
     const checkPinchGesture = (hand) => {
@@ -196,7 +196,7 @@ class NASASuitsApp {
     // Initial lock (for non-VR mode as well)
     lockInterfacePosition();
   }
-  
+
   // Animation loop
   animate() {
     // Update controls
