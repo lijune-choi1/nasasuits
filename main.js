@@ -44,6 +44,9 @@ class NASASuitsApp {
       // Initialize UI manager
       this.uiManager = new UIManager(this.scene, this.camera, this.renderer);
       
+      // Create WebXR UI Layer
+      this.createWebXRUILayer();
+      
       // Set up window resize handler
       window.addEventListener('resize', this.onWindowResize.bind(this));
       
@@ -58,6 +61,84 @@ class NASASuitsApp {
       console.error('Failed to initialize NASA SUITS Application:', error);
       this.displayError(error);
     }
+  }
+  
+  // Create WebXR UI Layer
+  createWebXRUILayer() {
+    const uiLayer = document.createElement('div');
+    uiLayer.id = 'webxr-ui-layer';
+    uiLayer.style.position = 'fixed';
+    uiLayer.style.top = '0';
+    uiLayer.style.left = '0';
+    uiLayer.style.width = '100%';
+    uiLayer.style.pointerEvents = 'none';
+    uiLayer.style.zIndex = '10';
+    uiLayer.style.display = 'none'; // Initially hidden
+    
+    // Create status panels
+    const createStatusPanel = (text, color = 'white') => {
+      const panel = document.createElement('div');
+      panel.style.backgroundColor = 'rgba(26, 26, 26, 0.8)';
+      panel.style.color = color;
+      panel.style.padding = '10px';
+      panel.style.margin = '10px';
+      panel.style.borderRadius = '5px';
+      panel.style.display = 'inline-block';
+      panel.textContent = text;
+      return panel;
+    };
+    
+    // Top row status panels
+    const batteryPanel = createStatusPanel('Battery: 75%');
+    const o2Panel = createStatusPanel('O2: 75%');
+    const pressurePanel = createStatusPanel('Pressure: 14.3psi');
+    
+    // Middle info panels
+    const distancePanel = createStatusPanel('100m remaining', '#FFCC00');
+    const timePanel = createStatusPanel('15:00 min to Destination', '#00FF66');
+    
+    // Bottom panels
+    const distanceWalkedPanel = createStatusPanel('Walked 500m');
+    const pilotPanel = createStatusPanel('Pilot Neil Armstrong');
+    const navigationPanel = createStatusPanel('Navigation Mode', '#00FF66');
+    
+    // Arrange panels
+    const topRowContainer = document.createElement('div');
+    topRowContainer.style.display = 'flex';
+    topRowContainer.style.justifyContent = 'space-between';
+    topRowContainer.appendChild(batteryPanel);
+    topRowContainer.appendChild(o2Panel);
+    topRowContainer.appendChild(pressurePanel);
+    
+    const middleRowContainer = document.createElement('div');
+    middleRowContainer.style.display = 'flex';
+    middleRowContainer.style.justifyContent = 'space-between';
+    middleRowContainer.appendChild(distancePanel);
+    middleRowContainer.appendChild(timePanel);
+    
+    const bottomRowContainer = document.createElement('div');
+    bottomRowContainer.style.display = 'flex';
+    bottomRowContainer.style.justifyContent = 'space-between';
+    bottomRowContainer.appendChild(distanceWalkedPanel);
+    bottomRowContainer.appendChild(pilotPanel);
+    bottomRowContainer.appendChild(navigationPanel);
+    
+    // Add containers to UI layer
+    uiLayer.appendChild(topRowContainer);
+    uiLayer.appendChild(middleRowContainer);
+    uiLayer.appendChild(bottomRowContainer);
+    
+    // Add to document
+    document.body.appendChild(uiLayer);
+    
+    // Show/hide UI layer for VR sessions
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      uiLayer.style.display = 'block';
+    });
+    
+    this.renderer.xr.addEventListener('sessionend', () => {
+      uiLayer.style.display = 'none';
+    });
   }
   
   // Animation loop
