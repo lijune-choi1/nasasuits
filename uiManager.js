@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 class UIManager {
   constructor(scene, camera, renderer) {
+    console.log('UIManager script loaded');
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
