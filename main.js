@@ -81,7 +81,6 @@ class NASASuitsApp {
     }
   }
   
-  // Setup VR Session Listeners
   setupVRSessionListeners() {
     const spaceInterface = document.getElementById('space-interface');
     const actionButtons = document.getElementById('vr-action-buttons');
@@ -117,7 +116,8 @@ class NASASuitsApp {
   
     // Keyboard control for desktop testing
     window.addEventListener('keydown', (event) => {
-      if (event.code === 'Space') {
+      // Check if not in VR mode
+      if (!this.renderer.xr.isPresenting && event.code === 'Space') {
         toggleActionButtons();
       }
     });
@@ -142,8 +142,9 @@ class NASASuitsApp {
   
       // Hand tracking for gesture control
       const session = this.renderer.xr.getSession();
-      session.addEventListener('inputsourceschange', (event) => {
-        const hands = event.inputSources.filter(source => source.hand);
+      
+      const gestureHandler = () => {
+        const hands = session.inputSources.filter(source => source.hand);
         
         hands.forEach(hand => {
           const isPinching = checkPinchGesture(hand.hand);
@@ -161,13 +162,28 @@ class NASASuitsApp {
             }
           }
         });
-      });
+      };
+  
+      // Use animation frame for continuous gesture tracking
+      const trackGestures = () => {
+        if (this.renderer.xr.isPresenting) {
+          gestureHandler();
+          this.gestureTrackingFrame = requestAnimationFrame(trackGestures);
+        }
+      };
+  
+      trackGestures();
     });
   
     // VR Session End
     this.renderer.xr.addEventListener('sessionend', () => {
       console.log('VR Session Ended');
       lockInterfacePosition();
+      
+      // Cancel gesture tracking
+      if (this.gestureTrackingFrame) {
+        cancelAnimationFrame(this.gestureTrackingFrame);
+      }
       
       // Reset button visibility
       if (actionButtons) {
