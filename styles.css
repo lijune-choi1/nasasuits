@@ -133,3 +133,9 @@ body {
     border-width: 3px;
   }
 }
+
+
+  #webxr-ui-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }

@@ -55,6 +55,9 @@ class NASASuitsApp {
       
       // Hide loading indicator
       this.hideLoading();
+
+      this.addMouseControls();
+
       
       console.log('NASA SUITS Application initialized successfully');
     } catch (error) {
@@ -131,12 +134,17 @@ class NASASuitsApp {
     // Add to document
     document.body.appendChild(uiLayer);
     
-    // Show/hide UI layer for VR sessions
+    // In main.js, modify the VR session event listeners
     this.renderer.xr.addEventListener('sessionstart', () => {
+      console.log('VR Session Started');
+      console.log('WebXR UI Layer:', uiLayer);
+      console.log('Display Style Before:', uiLayer.style.display);
       uiLayer.style.display = 'block';
+      console.log('Display Style After:', uiLayer.style.display);
     });
-    
+
     this.renderer.xr.addEventListener('sessionend', () => {
+      console.log('VR Session Ended');
       uiLayer.style.display = 'none';
     });
   }
@@ -177,6 +185,99 @@ class NASASuitsApp {
       errorDiv.textContent = `Error: ${error.message}`;
       errorDiv.style.display = 'block';
     }
+  }
+
+  addMouseControls() {
+    // Create orbit controls that work in both VR and non-VR modes
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    this.controls.dampingFactor = 0.25;
+    this.controls.screenSpacePanning = false;
+    this.controls.maxPolarAngle = Math.PI / 2;
+  }
+
+  createWebXRUILayer() {
+    const uiLayer = document.createElement('div');
+    uiLayer.id = 'webxr-ui-layer';
+    uiLayer.style.position = 'fixed';
+    uiLayer.style.top = '0';
+    uiLayer.style.left = '0';
+    uiLayer.style.width = '100%';
+    uiLayer.style.height = '100%'; // Full height
+    uiLayer.style.pointerEvents = 'none';
+    uiLayer.style.zIndex = '1000'; // High z-index
+    uiLayer.style.display = 'none';
+    uiLayer.style.backgroundColor = 'transparent'; // Ensure it doesn't block view
+    
+    // Create a container for panels
+    const panelsContainer = document.createElement('div');
+    panelsContainer.style.position = 'absolute';
+    panelsContainer.style.top = '20px';
+    panelsContainer.style.left = '20px';
+    panelsContainer.style.display = 'flex';
+    panelsContainer.style.flexDirection = 'column';
+    
+    // Create status panels with more visible debugging
+    const createStatusPanel = (text, color = 'white', bgColor = 'rgba(26, 26, 26, 0.8)') => {
+      const panel = document.createElement('div');
+      panel.style.backgroundColor = bgColor;
+      panel.style.color = color;
+      panel.style.padding = '10px';
+      panel.style.margin = '5px';
+      panel.style.borderRadius = '5px';
+      panel.style.border = '2px solid white'; // Add border for visibility
+      panel.style.minWidth = '200px';
+      panel.textContent = text;
+      return panel;
+    };
+    
+    // Debug panel to confirm VR session
+    const debugPanel = createStatusPanel('VR Session Active', 'green', 'rgba(0, 255, 0, 0.2)');
+    panelsContainer.appendChild(debugPanel);
+    
+    // Add all panels
+    const panels = [
+      'Battery: 75%',
+      'O2: 75%',
+      'Pressure: 14.3psi',
+      '100m remaining',
+      '15:00 min to Destination',
+      'Walked 500m',
+      'Pilot Neil Armstrong',
+      'Navigation Mode'
+    ];
+    
+    panels.forEach(panelText => {
+      const panel = createStatusPanel(panelText);
+      panelsContainer.appendChild(panel);
+    });
+    
+    uiLayer.appendChild(panelsContainer);
+    document.body.appendChild(uiLayer);
+    
+    // Extensive logging
+    console.log('WebXR UI Layer Created:', uiLayer);
+    
+    // VR Session Event Listeners with Extensive Logging
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      console.log('VR Session Started');
+      console.log('Current UI Layer:', uiLayer);
+      
+      // Force display
+      uiLayer.style.display = 'block';
+      console.log('UI Layer Display Style:', uiLayer.style.display);
+      
+      // Additional visibility check
+      setTimeout(() => {
+        console.log('UI Layer Computed Style:', window.getComputedStyle(uiLayer).display);
+        console.log('UI Layer Visibility:', uiLayer.offsetParent !== null);
+      }, 100);
+    });
+    
+    this.renderer.xr.addEventListener('sessionend', () => {
+      console.log('VR Session Ended');
+      uiLayer.style.display = 'none';
+    });
   }
 }
 
