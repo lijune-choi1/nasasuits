@@ -53,11 +53,7 @@
       }, 5000);
     });
   </script>
-  <script type="module" src="spaceEnvironment.js">
-    console.log('SpaceEnvironment script tag executed');
-  </script>
-  <script type="module" src="uiManager.js">
-    console.log('UIManager script tag executed');
-  </script>
+<script type="module" src="spaceEnvironment.js" onerror="console.error('Failed to load spaceEnvironment.js')"></script>
+<script type="module" src="uiManager.js" onerror="console.error('Failed to load uiManager.js')"></script>
 </body>
 </html>
