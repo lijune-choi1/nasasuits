@@ -53,9 +53,11 @@
       }, 5000);
     });
   </script>
-  
-  <script type="module" src="spaceEnvironment.js"></script>
-  <script type="module" src="uiManager.js"></script>
-
+  <script type="module" src="spaceEnvironment.js">
+    console.log('SpaceEnvironment script tag executed');
+  </script>
+  <script type="module" src="uiManager.js">
+    console.log('UIManager script tag executed');
+  </script>
 </body>
 </html>
