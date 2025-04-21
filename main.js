@@ -66,89 +66,183 @@ class NASASuitsApp {
     }
   }
   
-  // Create WebXR UI Layer
+  // // Create WebXR UI Layer
+  // createWebXRUILayer() {
+  //   const uiLayer = document.createElement('div');
+  //   uiLayer.id = 'webxr-ui-layer';
+  //   uiLayer.style.position = 'fixed';
+  //   uiLayer.style.top = '0';
+  //   uiLayer.style.left = '0';
+  //   uiLayer.style.width = '100%';
+  //   uiLayer.style.pointerEvents = 'none';
+  //   uiLayer.style.zIndex = '10';
+  //   uiLayer.style.display = 'none'; // Initially hidden
+    
+  //   // Create status panels
+  //   const createStatusPanel = (text, color = 'white') => {
+  //     const panel = document.createElement('div');
+  //     panel.style.backgroundColor = 'rgba(26, 26, 26, 0.8)';
+  //     panel.style.color = color;
+  //     panel.style.padding = '10px';
+  //     panel.style.margin = '10px';
+  //     panel.style.borderRadius = '5px';
+  //     panel.style.display = 'inline-block';
+  //     panel.textContent = text;
+  //     return panel;
+  //   };
+    
+  //   // Top row status panels
+  //   const batteryPanel = createStatusPanel('Battery: 75%');
+  //   const o2Panel = createStatusPanel('O2: 75%');
+  //   const pressurePanel = createStatusPanel('Pressure: 14.3psi');
+    
+  //   // Middle info panels
+  //   const distancePanel = createStatusPanel('100m remaining', '#FFCC00');
+  //   const timePanel = createStatusPanel('15:00 min to Destination', '#00FF66');
+    
+  //   // Bottom panels
+  //   const distanceWalkedPanel = createStatusPanel('Walked 500m');
+  //   const pilotPanel = createStatusPanel('Pilot Neil Armstrong');
+  //   const navigationPanel = createStatusPanel('Navigation Mode', '#00FF66');
+    
+  //   // Arrange panels
+  //   const topRowContainer = document.createElement('div');
+  //   topRowContainer.style.display = 'flex';
+  //   topRowContainer.style.justifyContent = 'space-between';
+  //   topRowContainer.appendChild(batteryPanel);
+  //   topRowContainer.appendChild(o2Panel);
+  //   topRowContainer.appendChild(pressurePanel);
+    
+  //   const middleRowContainer = document.createElement('div');
+  //   middleRowContainer.style.display = 'flex';
+  //   middleRowContainer.style.justifyContent = 'space-between';
+  //   middleRowContainer.appendChild(distancePanel);
+  //   middleRowContainer.appendChild(timePanel);
+    
+  //   const bottomRowContainer = document.createElement('div');
+  //   bottomRowContainer.style.display = 'flex';
+  //   bottomRowContainer.style.justifyContent = 'space-between';
+  //   bottomRowContainer.appendChild(distanceWalkedPanel);
+  //   bottomRowContainer.appendChild(pilotPanel);
+  //   bottomRowContainer.appendChild(navigationPanel);
+    
+  //   // Add containers to UI layer
+  //   uiLayer.appendChild(topRowContainer);
+  //   uiLayer.appendChild(middleRowContainer);
+  //   uiLayer.appendChild(bottomRowContainer);
+    
+  //   // Add to document
+  //   document.body.appendChild(uiLayer);
+    
+  //   // In main.js, modify the VR session event listeners
+  //   this.renderer.xr.addEventListener('sessionstart', () => {
+  //     console.log('VR Session Started');
+  //     console.log('WebXR UI Layer:', uiLayer);
+  //     console.log('Display Style Before:', uiLayer.style.display);
+  //     uiLayer.style.display = 'block';
+  //     console.log('Display Style After:', uiLayer.style.display);
+  //   });
+
+  //   this.renderer.xr.addEventListener('sessionend', () => {
+  //     console.log('VR Session Ended');
+  //     uiLayer.style.display = 'none';
+  //   });
+  // }
   createWebXRUILayer() {
+    // Create a full-screen, high-z-index layer
     const uiLayer = document.createElement('div');
     uiLayer.id = 'webxr-ui-layer';
-    uiLayer.style.position = 'fixed';
-    uiLayer.style.top = '0';
-    uiLayer.style.left = '0';
-    uiLayer.style.width = '100%';
-    uiLayer.style.pointerEvents = 'none';
-    uiLayer.style.zIndex = '10';
-    uiLayer.style.display = 'none'; // Initially hidden
+    uiLayer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
+      background: transparent;
+    `;
+    
+    // Create a container for panels with absolute positioning
+    const panelsContainer = document.createElement('div');
+    panelsContainer.style.cssText = `
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      display: flex;
+      flex-direction: column;
+      background: rgba(0,0,0,0.5);
+      padding: 20px;
+      border-radius: 10px;
+    `;
     
     // Create status panels
     const createStatusPanel = (text, color = 'white') => {
       const panel = document.createElement('div');
-      panel.style.backgroundColor = 'rgba(26, 26, 26, 0.8)';
-      panel.style.color = color;
-      panel.style.padding = '10px';
-      panel.style.margin = '10px';
-      panel.style.borderRadius = '5px';
-      panel.style.display = 'inline-block';
+      panel.style.cssText = `
+        color: ${color};
+        background: rgba(26, 26, 26, 0.8);
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        min-width: 200px;
+        text-align: center;
+      `;
       panel.textContent = text;
       return panel;
     };
     
-    // Top row status panels
-    const batteryPanel = createStatusPanel('Battery: 75%');
-    const o2Panel = createStatusPanel('O2: 75%');
-    const pressurePanel = createStatusPanel('Pressure: 14.3psi');
+    // Add debug and status panels
+    const debugPanel = createStatusPanel('VR Session Active', 'green');
+    panelsContainer.appendChild(debugPanel);
     
-    // Middle info panels
-    const distancePanel = createStatusPanel('100m remaining', '#FFCC00');
-    const timePanel = createStatusPanel('15:00 min to Destination', '#00FF66');
+    const panels = [
+      'Battery: 75%',
+      'O2: 75%',
+      'Pressure: 14.3psi',
+      '100m remaining',
+      '15:00 min to Destination',
+      'Walked 500m',
+      'Pilot Neil Armstrong',
+      'Navigation Mode'
+    ];
     
-    // Bottom panels
-    const distanceWalkedPanel = createStatusPanel('Walked 500m');
-    const pilotPanel = createStatusPanel('Pilot Neil Armstrong');
-    const navigationPanel = createStatusPanel('Navigation Mode', '#00FF66');
+    panels.forEach(panelText => {
+      const panel = createStatusPanel(panelText);
+      panelsContainer.appendChild(panel);
+    });
     
-    // Arrange panels
-    const topRowContainer = document.createElement('div');
-    topRowContainer.style.display = 'flex';
-    topRowContainer.style.justifyContent = 'space-between';
-    topRowContainer.appendChild(batteryPanel);
-    topRowContainer.appendChild(o2Panel);
-    topRowContainer.appendChild(pressurePanel);
-    
-    const middleRowContainer = document.createElement('div');
-    middleRowContainer.style.display = 'flex';
-    middleRowContainer.style.justifyContent = 'space-between';
-    middleRowContainer.appendChild(distancePanel);
-    middleRowContainer.appendChild(timePanel);
-    
-    const bottomRowContainer = document.createElement('div');
-    bottomRowContainer.style.display = 'flex';
-    bottomRowContainer.style.justifyContent = 'space-between';
-    bottomRowContainer.appendChild(distanceWalkedPanel);
-    bottomRowContainer.appendChild(pilotPanel);
-    bottomRowContainer.appendChild(navigationPanel);
-    
-    // Add containers to UI layer
-    uiLayer.appendChild(topRowContainer);
-    uiLayer.appendChild(middleRowContainer);
-    uiLayer.appendChild(bottomRowContainer);
-    
-    // Add to document
+    uiLayer.appendChild(panelsContainer);
     document.body.appendChild(uiLayer);
     
-    // In main.js, modify the VR session event listeners
+    // VR Session Event Listeners with Comprehensive Logging
     this.renderer.xr.addEventListener('sessionstart', () => {
-      console.log('VR Session Started');
-      console.log('WebXR UI Layer:', uiLayer);
-      console.log('Display Style Before:', uiLayer.style.display);
+      console.group('VR Session Start');
+      console.log('Attempting to show UI Layer');
+      
+      // Multiple methods to ensure visibility
       uiLayer.style.display = 'block';
-      console.log('Display Style After:', uiLayer.style.display);
+      uiLayer.style.visibility = 'visible';
+      uiLayer.style.opacity = '1';
+      
+      // Detailed logging
+      console.log('UI Layer:', uiLayer);
+      console.log('Computed Display:', window.getComputedStyle(uiLayer).display);
+      console.log('Computed Visibility:', window.getComputedStyle(uiLayer).visibility);
+      console.log('Computed Opacity:', window.getComputedStyle(uiLayer).opacity);
+      console.log('Offset Parent:', uiLayer.offsetParent);
+      console.groupEnd();
     });
-
+  
     this.renderer.xr.addEventListener('sessionend', () => {
       console.log('VR Session Ended');
       uiLayer.style.display = 'none';
     });
-  }
   
+    // Debugging information
+    console.log('WebXR UI Layer Created and Attached to Document');
+  }
   // Animation loop
   animate() {
     // Update controls
@@ -196,89 +290,7 @@ class NASASuitsApp {
     this.controls.maxPolarAngle = Math.PI / 2;
   }
 
-  createWebXRUILayer() {
-    const uiLayer = document.createElement('div');
-    uiLayer.id = 'webxr-ui-layer';
-    uiLayer.style.position = 'fixed';
-    uiLayer.style.top = '0';
-    uiLayer.style.left = '0';
-    uiLayer.style.width = '100%';
-    uiLayer.style.height = '100%'; // Full height
-    uiLayer.style.pointerEvents = 'none';
-    uiLayer.style.zIndex = '1000'; // High z-index
-    uiLayer.style.display = 'none';
-    uiLayer.style.backgroundColor = 'transparent'; // Ensure it doesn't block view
-    
-    // Create a container for panels
-    const panelsContainer = document.createElement('div');
-    panelsContainer.style.position = 'absolute';
-    panelsContainer.style.top = '20px';
-    panelsContainer.style.left = '20px';
-    panelsContainer.style.display = 'flex';
-    panelsContainer.style.flexDirection = 'column';
-    
-    // Create status panels with more visible debugging
-    const createStatusPanel = (text, color = 'white', bgColor = 'rgba(26, 26, 26, 0.8)') => {
-      const panel = document.createElement('div');
-      panel.style.backgroundColor = bgColor;
-      panel.style.color = color;
-      panel.style.padding = '10px';
-      panel.style.margin = '5px';
-      panel.style.borderRadius = '5px';
-      panel.style.border = '2px solid white'; // Add border for visibility
-      panel.style.minWidth = '200px';
-      panel.textContent = text;
-      return panel;
-    };
-    
-    // Debug panel to confirm VR session
-    const debugPanel = createStatusPanel('VR Session Active', 'green', 'rgba(0, 255, 0, 0.2)');
-    panelsContainer.appendChild(debugPanel);
-    
-    // Add all panels
-    const panels = [
-      'Battery: 75%',
-      'O2: 75%',
-      'Pressure: 14.3psi',
-      '100m remaining',
-      '15:00 min to Destination',
-      'Walked 500m',
-      'Pilot Neil Armstrong',
-      'Navigation Mode'
-    ];
-    
-    panels.forEach(panelText => {
-      const panel = createStatusPanel(panelText);
-      panelsContainer.appendChild(panel);
-    });
-    
-    uiLayer.appendChild(panelsContainer);
-    document.body.appendChild(uiLayer);
-    
-    // Extensive logging
-    console.log('WebXR UI Layer Created:', uiLayer);
-    
-    // VR Session Event Listeners with Extensive Logging
-    this.renderer.xr.addEventListener('sessionstart', () => {
-      console.log('VR Session Started');
-      console.log('Current UI Layer:', uiLayer);
-      
-      // Force display
-      uiLayer.style.display = 'block';
-      console.log('UI Layer Display Style:', uiLayer.style.display);
-      
-      // Additional visibility check
-      setTimeout(() => {
-        console.log('UI Layer Computed Style:', window.getComputedStyle(uiLayer).display);
-        console.log('UI Layer Visibility:', uiLayer.offsetParent !== null);
-      }, 100);
-    });
-    
-    this.renderer.xr.addEventListener('sessionend', () => {
-      console.log('VR Session Ended');
-      uiLayer.style.display = 'none';
-    });
-  }
+ 
 }
 
 // Initialize the application when DOM is ready
