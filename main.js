@@ -24,7 +24,12 @@ class NASASuitsApp {
       this.camera.position.set(0, 1.6, 3);
       
       // Create renderer
-      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      // In your main.js constructor
+      this.renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true  // Make background transparent
+      });
+      this.renderer.domElement.style.zIndex = '1';  // Lower z-index than UI layer
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.xr.enabled = true;
       this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -148,39 +153,40 @@ class NASASuitsApp {
   //     uiLayer.style.display = 'none';
   //   });
   // }
-
   createWebXRUILayer() {
-    // Create a full-screen UI layer with maximum visibility
+    // Create a full-screen UI layer
     const uiLayer = document.createElement('div');
     uiLayer.id = 'webxr-ui-layer';
     
-    // Ensure maximum visibility with important styles
+    // Ensure the UI layer is on top of the Three.js canvas
     uiLayer.style.cssText = `
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
-      z-index: 9999 !important;
+      z-index: 9999 !important;  // High z-index to ensure it's on top
       pointer-events: none !important;
       display: none !important;
       background: transparent !important;
       opacity: 1 !important;
       visibility: visible !important;
+      overflow: hidden !important;
     `;
     
-    // Create a container for panels
+    // Create a container for panels with absolute positioning
     const panelsContainer = document.createElement('div');
     panelsContainer.style.cssText = `
       position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
+      top: 50px !important;  // Distance from top
+      left: 50px !important; // Distance from left
+      display: flex !important;
+      flex-direction: column !important;
       background: rgba(0,0,0,0.7) !important;
       padding: 20px !important;
       border-radius: 10px !important;
       color: white !important;
-      z-index: 10000 !important;
+      z-index: 10000 !important;  // Even higher z-index
     `;
     
     // Create a status panel function
@@ -199,8 +205,8 @@ class NASASuitsApp {
       return panel;
     };
     
-    // Add comprehensive debug information
-    const debugPanels = [
+    // Add debug and status panels
+    const panels = [
       createStatusPanel('WebXR UI Layer', 'green'),
       createStatusPanel('VR Mode Active', 'yellow'),
       createStatusPanel('Battery: 75%'),
@@ -208,51 +214,24 @@ class NASASuitsApp {
       createStatusPanel('Pressure: 14.3psi')
     ];
     
-    debugPanels.forEach(panel => panelsContainer.appendChild(panel));
+    panels.forEach(panel => panelsContainer.appendChild(panel));
     uiLayer.appendChild(panelsContainer);
     
     // Append to document body
     document.body.appendChild(uiLayer);
     
-    // Extensive VR session event listeners
-    this.renderer.xr.addEventListener('sessionstart', (event) => {
-      console.group('🚀 VR Session Started');
-      console.log('VR Session Event:', event);
-      
-      // Multiple methods to force visibility
+    // VR session event listeners
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      console.log('VR Session Started');
       uiLayer.style.display = 'block';
-      uiLayer.style.visibility = 'visible';
-      uiLayer.style.opacity = '1';
-      
-      // Detailed logging
-      console.log('UI Layer:', uiLayer);
-      console.log('Computed Styles:', {
-        display: window.getComputedStyle(uiLayer).display,
-        visibility: window.getComputedStyle(uiLayer).visibility,
-        opacity: window.getComputedStyle(uiLayer).opacity
-      });
-      console.log('Offset Parent:', uiLayer.offsetParent);
-      console.groupEnd();
     });
   
     this.renderer.xr.addEventListener('sessionend', () => {
-      console.log('🛑 VR Session Ended');
+      console.log('VR Session Ended');
       uiLayer.style.display = 'none';
     });
-  
-    // WebXR Support Check
-    if ('xr' in navigator) {
-      navigator.xr.isSessionSupported('immersive-vr')
-        .then(supported => {
-          console.log('WebXR Immersive VR Support:', supported);
-        })
-        .catch(error => {
-          console.error('WebXR Support Check Error:', error);
-        });
-    } else {
-      console.warn('WebXR not supported in this browser');
-    }
   }
+
   // Animation loop
   animate() {
     // Update controls
