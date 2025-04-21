@@ -4,8 +4,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 // Main application class
 class NASASuitsApp {
@@ -57,8 +55,8 @@ class NASASuitsApp {
     // Hand tracking setup
     this.setupHandTracking();
     
-    // Initialize UI
-    this.initializeUI();
+    // Initialize UI - as a separate group in the scene
+    this.createNASASuitsUI();
     
     // Pinch state tracking
     this.isPinching = false;
@@ -80,9 +78,6 @@ class NASASuitsApp {
     
     // Moon surface (ground)
     this.addMoonSurface();
-    
-    // Add some moon craters and rocks
-    this.addMoonFeatures();
   }
   
   // Add stars to the background
@@ -130,7 +125,7 @@ class NASASuitsApp {
     context.fillStyle = gradient;
     context.fillRect(0, 0, 512, 256);
     
-    // Add some "clouds" and "land"
+    // Add some "clouds"
     context.fillStyle = 'rgba(255, 255, 255, 0.5)';
     for (let i = 0; i < 20; i++) {
       const x = Math.random() * 512;
@@ -141,13 +136,24 @@ class NASASuitsApp {
       context.fill();
     }
     
-    context.fillStyle = 'rgba(0, 128, 0, 0.5)';
-    for (let i = 0; i < 30; i++) {
+    // Add some "land" (green continents)
+    context.fillStyle = 'rgba(76, 175, 80, 0.5)';
+    for (let i = 0; i < 7; i++) {
       const x = Math.random() * 512;
       const y = Math.random() * 256;
-      const radius = 5 + Math.random() * 30;
+      const size = 20 + Math.random() * 60;
+      
+      // Draw irregular continent shape
       context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.moveTo(x, y);
+      for (let j = 0; j < 10; j++) {
+        const angle = Math.PI * 2 * j / 10;
+        const radius = size * (0.5 + Math.random() * 0.5);
+        const px = x + Math.cos(angle) * radius;
+        const py = y + Math.sin(angle) * radius;
+        context.lineTo(px, py);
+      }
+      context.closePath();
       context.fill();
     }
     
@@ -192,23 +198,23 @@ class NASASuitsApp {
       context.fill();
     }
     
-    // Create low contrast crater patterns
-    for (let i = 0; i < 100; i++) {
+    // Add some crater patterns
+    for (let i = 0; i < 50; i++) {
       const x = Math.random() * 1024;
       const y = Math.random() * 1024;
-      const radius = 10 + Math.random() * 80;
-      const brightness = 150 + Math.random() * 30; // 150-180
+      const size = 20 + Math.random() * 100;
       
       // Crater rim (slightly brighter)
-      context.fillStyle = `rgb(${brightness + 20}, ${brightness + 20}, ${brightness + 20})`;
+      context.strokeStyle = '#AAAAAA';
+      context.lineWidth = 2;
       context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.arc(x, y, size, 0, Math.PI * 2);
       context.stroke();
       
       // Crater floor (slightly darker)
-      context.fillStyle = `rgb(${brightness - 20}, ${brightness - 20}, ${brightness - 20})`;
+      context.fillStyle = '#666666';
       context.beginPath();
-      context.arc(x, y, radius - 2, 0, Math.PI * 2);
+      context.arc(x, y, size - 2, 0, Math.PI * 2);
       context.fill();
     }
     
@@ -218,45 +224,10 @@ class NASASuitsApp {
     moonTexture.wrapT = THREE.RepeatWrapping;
     moonTexture.repeat.set(4, 4);
     
-    // Create bump map for terrain variations
-    const bumpCanvas = document.createElement('canvas');
-    bumpCanvas.width = 1024;
-    bumpCanvas.height = 1024;
-    const bumpContext = bumpCanvas.getContext('2d');
-    
-    // Fill with medium gray (neutral bump)
-    bumpContext.fillStyle = '#777777';
-    bumpContext.fillRect(0, 0, 1024, 1024);
-    
-    // Add random bumps
-    for (let i = 0; i < 200; i++) {
-      const x = Math.random() * 1024;
-      const y = Math.random() * 1024;
-      const radius = 5 + Math.random() * 50;
-      
-      // Create radial gradient for each bump
-      const gradient = bumpContext.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, '#ffffff');
-      gradient.addColorStop(1, '#777777');
-      
-      bumpContext.fillStyle = gradient;
-      bumpContext.beginPath();
-      bumpContext.arc(x, y, radius, 0, Math.PI * 2);
-      bumpContext.fill();
-    }
-    
-    // Create texture from canvas
-    const bumpTexture = new THREE.CanvasTexture(bumpCanvas);
-    bumpTexture.wrapS = THREE.RepeatWrapping;
-    bumpTexture.wrapT = THREE.RepeatWrapping;
-    bumpTexture.repeat.set(4, 4);
-    
     // Create moon ground
     const moonGroundGeometry = new THREE.PlaneGeometry(100, 100, 64, 64);
     const moonMaterial = new THREE.MeshStandardMaterial({
       map: moonTexture,
-      bumpMap: bumpTexture,
-      bumpScale: 0.1,
       roughness: 0.9,
       metalness: 0.1,
       color: 0x888888
@@ -266,53 +237,55 @@ class NASASuitsApp {
     this.moonGround.rotation.x = -Math.PI / 2; // Rotate to be horizontal
     this.moonGround.position.y = -1.5; // Position below the user
     this.scene.add(this.moonGround);
+    
+    // Add some 3D terrain features
+    this.addMoonFeatures();
   }
   
-  // Add moon features (craters, rocks)
+  // Add 3D moon terrain features
   addMoonFeatures() {
-    // Add some craters
+    // Add some craters as actual geometry
     for (let i = 0; i < 20; i++) {
       const radius = 1 + Math.random() * 5;
       const segments = 32;
-      const depth = 0.1 + Math.random() * 0.5;
       
-      // Create crater geometry (ring)
-      const craterGeometry = new THREE.RingGeometry(radius - 0.2, radius, segments);
-      const craterMaterial = new THREE.MeshStandardMaterial({
+      // Create crater geometry (rim)
+      const craterRimGeometry = new THREE.TorusGeometry(radius, 0.2, 8, 32);
+      const craterRimMaterial = new THREE.MeshStandardMaterial({
         color: 0x999999,
         roughness: 0.8,
         metalness: 0.1
       });
       
-      const crater = new THREE.Mesh(craterGeometry, craterMaterial);
+      const craterRim = new THREE.Mesh(craterRimGeometry, craterRimMaterial);
       
       // Position randomly on the ground
-      crater.position.x = (Math.random() - 0.5) * 80;
-      crater.position.z = (Math.random() - 0.5) * 80;
-      crater.position.y = -1.5 + 0.01; // Just above the ground
-      crater.rotation.x = -Math.PI / 2; // Align with the ground
+      craterRim.position.x = (Math.random() - 0.5) * 80;
+      craterRim.position.z = (Math.random() - 0.5) * 80;
+      craterRim.position.y = -1.5 + 0.01; // Just above the ground
+      craterRim.rotation.x = Math.PI / 2; // Align with the ground
       
-      this.scene.add(crater);
+      this.scene.add(craterRim);
       
-      // Create crater inner part (slightly darker)
-      const craterInnerGeometry = new THREE.CircleGeometry(radius - 0.2, segments);
-      const craterInnerMaterial = new THREE.MeshStandardMaterial({
-        color: 0x777777,
+      // Create crater floor (slightly recessed)
+      const craterFloorGeometry = new THREE.CircleGeometry(radius - 0.3, segments);
+      const craterFloorMaterial = new THREE.MeshStandardMaterial({
+        color: 0x666666,
         roughness: 0.9,
         metalness: 0.1
       });
       
-      const craterInner = new THREE.Mesh(craterInnerGeometry, craterInnerMaterial);
-      craterInner.position.x = crater.position.x;
-      craterInner.position.z = crater.position.z;
-      craterInner.position.y = -1.5 + 0.005; // Slightly above the ground, below the rim
-      craterInner.rotation.x = -Math.PI / 2; // Align with the ground
+      const craterFloor = new THREE.Mesh(craterFloorGeometry, craterFloorMaterial);
+      craterFloor.position.x = craterRim.position.x;
+      craterFloor.position.z = craterRim.position.z;
+      craterFloor.position.y = -1.52; // Slightly below the ground
+      craterFloor.rotation.x = -Math.PI / 2; // Align with the ground
       
-      this.scene.add(craterInner);
+      this.scene.add(craterFloor);
     }
     
     // Add some rocks
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 100; i++) {
       const rockGeometry = new THREE.DodecahedronGeometry(0.1 + Math.random() * 0.4, 0);
       const rockMaterial = new THREE.MeshStandardMaterial({
         color: 0x888888,
@@ -339,35 +312,7 @@ class NASASuitsApp {
       this.scene.add(rock);
     }
     
-    // Add a few larger boulders
-    for (let i = 0; i < 5; i++) {
-      const boulderGeometry = new THREE.DodecahedronGeometry(0.5 + Math.random() * 1.5, 1);
-      const boulderMaterial = new THREE.MeshStandardMaterial({
-        color: 0x999999,
-        roughness: 0.9,
-        metalness: 0.1
-      });
-      
-      const boulder = new THREE.Mesh(boulderGeometry, boulderMaterial);
-      
-      // Position randomly on the ground, but keep them far away
-      let x, z;
-      do {
-        x = (Math.random() - 0.5) * 80;
-        z = (Math.random() - 0.5) * 80;
-      } while (Math.sqrt(x * x + z * z) < 20); // Keep boulders far from the center
-      
-      boulder.position.set(x, -1.5 + boulder.geometry.parameters.radius / 2, z);
-      
-      // Random rotation
-      boulder.rotation.x = Math.random() * Math.PI;
-      boulder.rotation.y = Math.random() * Math.PI;
-      boulder.rotation.z = Math.random() * Math.PI;
-      
-      this.scene.add(boulder);
-    }
-    
-    // Add some footprints near the user
+    // Add footprints near the user
     this.addFootprints();
   }
   
@@ -474,61 +419,43 @@ class NASASuitsApp {
     this.scene.add(this.pinchIndicatorRight);
   }
   
-  // Initialize UI
-  initializeUI() {
-    this.ui = {
-      panels: {},
-      texts: {},
-      initialized: false
-    };
-    
-    // Load font for text rendering
-    const fontLoader = new FontLoader();
-    fontLoader.load('https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-      this.ui.font = font;
-      this.ui.initialized = true;
-      
-      // Create all UI panels
-      this.createUIElements();
-    });
-  }
-  
-  // Create UI panels and elements
-  createUIElements() {
-    if (!this.ui.initialized) return;
-    
-    // Parent group for all UI elements (attached to camera)
+  // Create NASA SUITS UI
+  createNASASuitsUI() {
+    // Create UI group - NOT attached to camera
     this.uiGroup = new THREE.Group();
-    this.camera.add(this.uiGroup);
-    this.uiGroup.position.set(0, 0, -1); // 1 meter in front of the camera
+    this.scene.add(this.uiGroup);
     
-    // Create the top status panels
-    this.createStatusPanel('battery', '75%', 'Battery', 'Secondary', -0.4, 0.2);
-    this.createStatusPanel('oxygen', '75%', 'O2', 'Oxygen', 0, 0.2);
-    this.createStatusPanel('pressure', '14.3psi', 'Pressure', 'Secondary', 0.4, 0.2);
+    // Create status panels (top row)
+    this.createStatusPanel(-0.4, 0.2, 0, "75%", "Battery", "Secondary");
+    this.createStatusPanel(0, 0.2, 0, "75%", "O2", "Oxygen");
+    this.createStatusPanel(0.4, 0.2, 0, "14.3psi", "Pressure", "Secondary");
     
-    // Create the navigation info panels
-    this.createInfoPanel('distance', '100m remaining', -0.3, 0.05);
-    this.createInfoPanel('time', '15:00 min to Destination', 0.3, 0.05);
+    // Create info panels (middle row)
+    this.createInfoPanel(-0.3, 0.05, 0, "100m", "remaining", false);
+    this.createInfoPanel(0.3, 0.05, 0, "15:00 min", "to Destination", false);
     
-    // Create the bottom status panel
-    this.createInfoPanel('walked', 'Walked 500m', 0, -0.2);
+    // Create bottom status panels
+    this.createInfoPanel(0, -0.2, 0, "Walked 500m", "", false);
     
-    // Create the pilot name panel (bottom left)
-    this.createInfoPanel('pilot', 'Pilot Neil Armstrong', -0.4, -0.3);
+    // Create bottom controls
+    this.createInfoPanel(-0.4, -0.3, 0, "Pilot Neil Armstrong", "", false);
+    this.createInfoPanel(0, -0.3, 0, "Navigation Mode", "", true);
     
-    // Create the navigation mode panel (bottom center)
-    this.createInfoPanel('navMode', 'Navigation Mode', 0, -0.3, true);
+    console.log("UI panels created");
   }
   
   // Create a status panel with title, value, and subtitle
-  createStatusPanel(id, value, title, subtitle, x, y) {
-    // Create panel container
+  createStatusPanel(x, y, z, value, title, subtitle) {
+    // Create panel group
     const panel = new THREE.Group();
-    panel.position.set(x, y, 0);
+    panel.position.set(x, y, z);
     
-    // Create background panel
-    const bgGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.01);
+    // Create background with rounded corners
+    const panelWidth = 0.3;
+    const panelHeight = 0.15;
+    
+    // Simple box geometry for the panel
+    const bgGeometry = new THREE.BoxGeometry(panelWidth, panelHeight, 0.01);
     const bgMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x1A1A1A,
       transparent: true,
@@ -537,33 +464,34 @@ class NASASuitsApp {
     const background = new THREE.Mesh(bgGeometry, bgMaterial);
     panel.add(background);
     
-    // Add time display
-    this.addText(panel, '11:23:24', 0, 0.045, 0.012, 0xAAAAAA);
+    // Add time at top
+    this.addTextToPanel(panel, "11:23:24", 0, 0.045, 0.012, "#AAAAAA");
     
-    // Add value display
-    this.addText(panel, value, 0, 0.015, 0.025, 0xFFFFFF);
+    // Add value
+    this.addTextToPanel(panel, value, 0, 0.015, 0.025, "#FFFFFF");
     
     // Add title
-    this.addText(panel, title, 0, -0.015, 0.015, 0xFFFFFF);
+    this.addTextToPanel(panel, title, 0, -0.015, 0.015, "#FFFFFF");
     
     // Add subtitle
-    this.addText(panel, subtitle, 0, -0.04, 0.012, 0x888888);
+    this.addTextToPanel(panel, subtitle, 0, -0.04, 0.012, "#888888");
     
     this.uiGroup.add(panel);
-    this.ui.panels[id] = panel;
-    
     return panel;
   }
   
-  // Create an info panel for other data
-  createInfoPanel(id, text, x, y, highlighted = false) {
-    // Create panel container
-    const panel = new THREE.Group();
-    panel.position.set(x, y, 0);
+  // Create an info panel with icon and text
+  createInfoPanel(x, y, z, text, subtext = "", highlighted = false) {
+    // Calculate width based on text length
+    const panelWidth = Math.max(0.3, (text.length + subtext.length) * 0.015 + 0.1);
+    const panelHeight = 0.06;
     
-    // Create background panel
-    const width = text.length * 0.015 + 0.1; // Adjust width based on text length
-    const bgGeometry = new THREE.BoxGeometry(width, 0.06, 0.01);
+    // Create panel group
+    const panel = new THREE.Group();
+    panel.position.set(x, y, z);
+    
+    // Create background
+    const bgGeometry = new THREE.BoxGeometry(panelWidth, panelHeight, 0.01);
     const bgMaterial = new THREE.MeshBasicMaterial({ 
       color: highlighted ? 0x333333 : 0x1A1A1A,
       transparent: true,
@@ -572,48 +500,86 @@ class NASASuitsApp {
     const background = new THREE.Mesh(bgGeometry, bgMaterial);
     panel.add(background);
     
-    // Add icon (simplified as a small cube for now)
-    const iconGeometry = new THREE.BoxGeometry(0.015, 0.015, 0.01);
-    const iconMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    // Add icon (grid pattern)
+    const iconSize = 0.02;
+    const iconCanvas = document.createElement('canvas');
+    iconCanvas.width = 64;
+    iconCanvas.height = 64;
+    const iconContext = iconCanvas.getContext('2d');
+    
+    // Draw grid icon
+    iconContext.fillStyle = '#FFFFFF';
+    iconContext.fillRect(12, 12, 18, 18);
+    iconContext.fillRect(34, 12, 18, 18);
+    iconContext.fillRect(12, 34, 18, 18);
+    iconContext.fillRect(34, 34, 18, 18);
+    
+    const iconTexture = new THREE.CanvasTexture(iconCanvas);
+    const iconMaterial = new THREE.MeshBasicMaterial({
+      map: iconTexture,
+      transparent: true
+    });
+    
+    const iconGeometry = new THREE.PlaneGeometry(iconSize, iconSize);
     const icon = new THREE.Mesh(iconGeometry, iconMaterial);
-    icon.position.set(-width/2 + 0.04, 0, 0.01);
+    icon.position.set(-panelWidth/2 + 0.04, 0, 0.001);
     panel.add(icon);
     
     // Add text
-    this.addText(panel, text, 0.02, 0, 0.012, 0xFFFFFF);
+    if (subtext) {
+      // If we have subtext, the first part might be colored
+      const textColor = text.includes("100m") ? "#FFCC00" : text.includes("15:00") ? "#00FF66" : "#FFFFFF";
+      this.addTextToPanel(panel, text, -panelWidth/2 + 0.07, 0, 0.014, textColor);
+      this.addTextToPanel(panel, subtext, -panelWidth/2 + 0.07 + text.length * 0.014, 0, 0.014, "#FFFFFF");
+    } else {
+      // Regular text
+      this.addTextToPanel(panel, text, -panelWidth/2 + 0.07, 0, 0.014, "#FFFFFF");
+    }
     
     this.uiGroup.add(panel);
-    this.ui.panels[id] = panel;
-    
     return panel;
   }
   
-  // Utility method to add text to a panel
-  addText(parent, text, x, y, size, color) {
-    if (!this.ui.font) return null;
+  // Add text to a panel using canvas texture
+  addTextToPanel(parent, text, x, y, size, color) {
+    // Create canvas for text
+    const canvas = document.createElement('canvas');
+    const textWidth = text.length * 25;
+    canvas.width = textWidth;
+    canvas.height = 50;
     
-    const textGeometry = new TextGeometry(text, {
-      font: this.ui.font,
-      size: size,
-      height: 0.001,
-      curveSegments: 4,
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'transparent';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Set font and draw text
+    const fontSize = Math.floor(size * 1000);
+    context.font = `${fontSize}px Arial, sans-serif`;
+    context.textAlign = 'left';
+    context.textBaseline = 'middle';
+    context.fillStyle = color;
+    context.fillText(text, 0, canvas.height / 2);
+    
+    // Create texture and mesh
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false
     });
     
-    textGeometry.computeBoundingBox();
-    const centerOffset = -0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
+    const aspectRatio = canvas.width / canvas.height;
+    const height = size * 1.5;
+    const width = height * aspectRatio;
     
-    const material = new THREE.MeshBasicMaterial({ color: color });
-    const textMesh = new THREE.Mesh(textGeometry, material);
-    textMesh.position.set(x + centerOffset, y, 0.01);
-    parent.add(textMesh);
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x + width/2, y, 0.001);
     
-    return textMesh;
-  }
-  
-  // Update the UI with telemetry values
-  updateTelemetry(data) {
-    // Implementation would update specific panels with new data
-    // This would replace text meshes with new values
+    parent.add(mesh);
+    return mesh;
   }
   
   // Window resize handler
@@ -672,9 +638,6 @@ class NASASuitsApp {
           // Pinch started
           console.log('Pinch detected');
           this.isPinching = true;
-          
-          // TODO: Implement UI interaction based on pinch location
-          // E.g., check if pinch is near an interactive element
         }
       }
     } else {
@@ -717,53 +680,31 @@ class NASASuitsApp {
       }
     }
     
+    // Update UI position to follow camera in VR
+    if (this.uiGroup) {
+      // Get camera position and direction
+      const cameraPosition = this.camera.position.clone();
+      const cameraDirection = new THREE.Vector3(0, 0, -1);
+      cameraDirection.applyQuaternion(this.camera.quaternion);
+      
+      // Position UI in front of camera at fixed distance
+      const uiDistance = 1; // 1 meter in front
+      const uiPosition = cameraPosition.clone().add(
+        cameraDirection.multiplyScalar(uiDistance)
+      );
+      
+      this.uiGroup.position.copy(uiPosition);
+      
+      // Make UI face the camera
+      this.uiGroup.quaternion.copy(this.camera.quaternion);
+    }
+    
     // Render the scene
     this.renderer.render(this.scene, this.camera);
   }
 }
 
-// Continued from previous file
-
-  // Initialize the application when the DOM is ready
-  document.addEventListener('DOMContentLoaded', () => {
-    // Check if WebXR is supported
-    if ('xr' in navigator) {
-      navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-        if (supported) {
-          // Initialize the app
-          new NASASuitsApp();
-        } else {
-          // WebXR supported but immersive-vr not available
-          showWebXRWarning('Your browser supports WebXR, but VR mode is not available on this device.');
-        }
-      });
-    } else {
-      // WebXR not supported
-      showWebXRWarning('Your browser does not support WebXR. Please use a WebXR-compatible browser.');
-    }
-  });
-
-  // Show warning for WebXR compatibility issues
-  function showWebXRWarning(message) {
-    // Hide loading indicator
-    const loading = document.getElementById('loading');
-    if (loading) loading.style.display = 'none';
-    
-    // Create warning element
-    const warning = document.createElement('div');
-    warning.className = 'webxr-warning';
-    warning.innerHTML = `
-      <h2>WebXR Not Available</h2>
-      <p>${message}</p>
-      <p>You can still view a non-VR version of this application.</p>
-      <button id="continue-anyway">Continue Anyway</button>
-    `;
-    
-    document.body.appendChild(warning);
-    
-    // Add event listener to button
-    document.getElementById('continue-anyway').addEventListener('click', () => {
-      warning.style.display = 'none';
-      new NASASuitsApp();
-    });
-  }
+// Initialize the application when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  new NASASuitsApp();
+});
