@@ -557,7 +557,7 @@ class NASASuitsApp {
     context.font = `${fontSize}px Arial, sans-serif`;
     context.textAlign = 'left';
     context.textBaseline = 'middle';
-    context.fillStyle = color;
+    context.fillStyle = color || '#FFFFFF';
     context.fillText(text, 0, canvas.height / 2);
     
     // Create texture and mesh
