@@ -542,6 +542,7 @@ class NASASuitsApp {
   
   // Add text to a panel using canvas texture
   addTextToPanel(parent, text, x, y, size, color) {
+    console.log('textppassing?');
     // Create canvas for text
     const canvas = document.createElement('canvas');
     const textWidth = text.length * 25;
