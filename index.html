@@ -53,7 +53,18 @@
       }, 5000);
     });
   </script>
-<script type="module" src="spaceEnvironment.js" onerror="console.error('Failed to load spaceEnvironment.js')"></script>
-<script type="module" src="uiManager.js" onerror="console.error('Failed to load uiManager.js')"></script>
+<script type="module">
+console.log('Module script system check');
+import('./spaceEnvironment.js').then(() => {
+  console.log('spaceEnvironment.js dynamically imported successfully');
+}).catch(err => {
+  console.error('Error importing spaceEnvironment.js:', err);
+});
+import('./uiManager.js').then(() => {
+  console.log('uiManager.js dynamically imported successfully');
+}).catch(err => {
+  console.error('Error importing uiManager.js:', err);
+});
+</script>
 </body>
 </html>
