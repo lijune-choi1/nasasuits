@@ -200,6 +200,28 @@ setupVRSessionListeners() {
 
   // Initial lock (for non-VR mode as well)
   lockInterfacePosition();
+  // Add this to the setupVRSessionListeners method in main.js, right before the closing }
+
+// Map button event listener
+const mapButton = document.getElementById('map-button');
+if (mapButton) {
+  mapButton.addEventListener('click', () => {
+    console.log('Map button clicked');
+    if (this.uiManager) {
+      this.uiManager.toggleMapWindow();
+    }
+  });
+}
+
+// Set up keyboard shortcut for map (M key)
+window.addEventListener('keydown', (event) => {
+  if (event.code === 'KeyM') {
+    console.log('Map key pressed');
+    if (this.uiManager) {
+      this.uiManager.toggleMapWindow();
+    }
+  }
+});
 }
 
   // Animation loop
