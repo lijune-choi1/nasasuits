@@ -148,100 +148,110 @@ class NASASuitsApp {
   //     uiLayer.style.display = 'none';
   //   });
   // }
+
   createWebXRUILayer() {
-    // Create a full-screen, high-z-index layer
+    // Create a full-screen UI layer with maximum visibility
     const uiLayer = document.createElement('div');
     uiLayer.id = 'webxr-ui-layer';
+    
+    // Ensure maximum visibility with important styles
     uiLayer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 9999;
-      pointer-events: none;
-      display: none;
-      background: transparent;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999 !important;
+      pointer-events: none !important;
+      display: none !important;
+      background: transparent !important;
+      opacity: 1 !important;
+      visibility: visible !important;
     `;
     
-    // Create a container for panels with absolute positioning
+    // Create a container for panels
     const panelsContainer = document.createElement('div');
     panelsContainer.style.cssText = `
-      position: absolute;
-      top: 10%;
-      left: 10%;
-      display: flex;
-      flex-direction: column;
-      background: rgba(0,0,0,0.5);
-      padding: 20px;
-      border-radius: 10px;
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      background: rgba(0,0,0,0.7) !important;
+      padding: 20px !important;
+      border-radius: 10px !important;
+      color: white !important;
+      z-index: 10000 !important;
     `;
     
-    // Create status panels
+    // Create a status panel function
     const createStatusPanel = (text, color = 'white') => {
       const panel = document.createElement('div');
       panel.style.cssText = `
-        color: ${color};
-        background: rgba(26, 26, 26, 0.8);
-        padding: 10px;
-        margin: 5px;
-        border-radius: 5px;
-        min-width: 200px;
-        text-align: center;
+        color: ${color} !important;
+        background: rgba(26, 26, 26, 0.8) !important;
+        padding: 10px !important;
+        margin: 5px !important;
+        border-radius: 5px !important;
+        min-width: 200px !important;
+        text-align: center !important;
       `;
       panel.textContent = text;
       return panel;
     };
     
-    // Add debug and status panels
-    const debugPanel = createStatusPanel('VR Session Active', 'green');
-    panelsContainer.appendChild(debugPanel);
-    
-    const panels = [
-      'Battery: 75%',
-      'O2: 75%',
-      'Pressure: 14.3psi',
-      '100m remaining',
-      '15:00 min to Destination',
-      'Walked 500m',
-      'Pilot Neil Armstrong',
-      'Navigation Mode'
+    // Add comprehensive debug information
+    const debugPanels = [
+      createStatusPanel('WebXR UI Layer', 'green'),
+      createStatusPanel('VR Mode Active', 'yellow'),
+      createStatusPanel('Battery: 75%'),
+      createStatusPanel('O2: 75%'),
+      createStatusPanel('Pressure: 14.3psi')
     ];
     
-    panels.forEach(panelText => {
-      const panel = createStatusPanel(panelText);
-      panelsContainer.appendChild(panel);
-    });
-    
+    debugPanels.forEach(panel => panelsContainer.appendChild(panel));
     uiLayer.appendChild(panelsContainer);
+    
+    // Append to document body
     document.body.appendChild(uiLayer);
     
-    // VR Session Event Listeners with Comprehensive Logging
-    this.renderer.xr.addEventListener('sessionstart', () => {
-      console.group('VR Session Start');
-      console.log('Attempting to show UI Layer');
+    // Extensive VR session event listeners
+    this.renderer.xr.addEventListener('sessionstart', (event) => {
+      console.group('🚀 VR Session Started');
+      console.log('VR Session Event:', event);
       
-      // Multiple methods to ensure visibility
+      // Multiple methods to force visibility
       uiLayer.style.display = 'block';
       uiLayer.style.visibility = 'visible';
       uiLayer.style.opacity = '1';
       
       // Detailed logging
       console.log('UI Layer:', uiLayer);
-      console.log('Computed Display:', window.getComputedStyle(uiLayer).display);
-      console.log('Computed Visibility:', window.getComputedStyle(uiLayer).visibility);
-      console.log('Computed Opacity:', window.getComputedStyle(uiLayer).opacity);
+      console.log('Computed Styles:', {
+        display: window.getComputedStyle(uiLayer).display,
+        visibility: window.getComputedStyle(uiLayer).visibility,
+        opacity: window.getComputedStyle(uiLayer).opacity
+      });
       console.log('Offset Parent:', uiLayer.offsetParent);
       console.groupEnd();
     });
   
     this.renderer.xr.addEventListener('sessionend', () => {
-      console.log('VR Session Ended');
+      console.log('🛑 VR Session Ended');
       uiLayer.style.display = 'none';
     });
   
-    // Debugging information
-    console.log('WebXR UI Layer Created and Attached to Document');
+    // WebXR Support Check
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-vr')
+        .then(supported => {
+          console.log('WebXR Immersive VR Support:', supported);
+        })
+        .catch(error => {
+          console.error('WebXR Support Check Error:', error);
+        });
+    } else {
+      console.warn('WebXR not supported in this browser');
+    }
   }
   // Animation loop
   animate() {
