@@ -85,32 +85,38 @@ class NASASuitsApp {
   setupVRSessionListeners() {
     const spaceInterface = document.getElementById('space-interface');
     
+    // Ensure the interface is always visible and positioned correctly
+    const lockInterfacePosition = () => {
+      if (spaceInterface) {
+        spaceInterface.style.cssText = `
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          z-index: 10000 !important;
+          pointer-events: none !important;
+          display: block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      }
+    };
+
     // VR Session Start
     this.renderer.xr.addEventListener('sessionstart', () => {
       console.log('VR Session Started');
-      
-      // Ensure interface is visible and positioned correctly
-      if (spaceInterface) {
-        spaceInterface.style.position = 'fixed';
-        spaceInterface.style.top = '0';
-        spaceInterface.style.left = '0';
-        spaceInterface.style.width = '100%';
-        spaceInterface.style.height = '100%';
-        spaceInterface.style.zIndex = '10000';
-        spaceInterface.style.display = 'block';
-        spaceInterface.style.pointerEvents = 'none';
-      }
+      lockInterfacePosition();
     });
 
     // VR Session End
     this.renderer.xr.addEventListener('sessionend', () => {
       console.log('VR Session Ended');
-      
-      // Optional: Reset interface if needed
-      if (spaceInterface) {
-        spaceInterface.style.display = 'block';
-      }
+      lockInterfacePosition();
     });
+
+    // Initial lock (for non-VR mode as well)
+    lockInterfacePosition();
   }
   
   // Animation loop
