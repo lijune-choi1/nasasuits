@@ -18,8 +18,7 @@
         "three/examples/jsm/webxr/VRButton.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js",
         "three/examples/jsm/webxr/XRHandModelFactory.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRHandModelFactory.js",
         "three/examples/jsm/loaders/FontLoader.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/FontLoader.js",
-        "three/examples/jsm/geometries/TextGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js",
-        "three/examples/jsm/geometries/RoundedBoxGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js"
+        "three/examples/jsm/geometries/TextGeometry.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js"
       }
     }
   </script>
@@ -48,10 +47,9 @@
     // Hide loading indicator when the document is fully loaded
     window.addEventListener('load', function() {
       // We'll hide this from the main.js when everything is ready
-      // This just ensures it disappears even if there's an issue
       setTimeout(() => {
         const loading = document.getElementById('loading');
-        if (loading) loading.style.display = 'none';
+        if (loading && loading.style.display !== 'none') loading.style.display = 'none';
       }, 5000);
     });
   </script>
