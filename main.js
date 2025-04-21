@@ -25,11 +25,17 @@ class NASASuitsApp {
       
       // Create renderer
       // In your main.js constructor
+      // Create renderer
       this.renderer = new THREE.WebGLRenderer({ 
         antialias: true,
         alpha: true  // Make background transparent
       });
-      this.renderer.domElement.style.zIndex = '1';  // Lower z-index than UI layer
+      this.renderer.domElement.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 1 !important;
+      `;
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.xr.enabled = true;
       this.renderer.setPixelRatio(window.devicePixelRatio);
