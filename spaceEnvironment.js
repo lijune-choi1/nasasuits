@@ -5,7 +5,6 @@ import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.
 
 class SpaceEnvironment {
   constructor() {
-    console.log('SpaceEnvironment script loaded');
     // Initialize application
     this.initializeApp();
     this.addEventListeners();

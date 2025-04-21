@@ -36,35 +36,8 @@
   
   <div id="error"></div>
   
-  <script>
-    // Error handling
-    window.addEventListener('error', function(event) {
-      console.error('Error:', event.error);
-      document.getElementById('error').textContent = 'Error: ' + event.error.message;
-      document.getElementById('error').style.display = 'block';
-    });
-    
-    // Hide loading indicator when the document is fully loaded
-    window.addEventListener('load', function() {
-      // We'll hide this from the main.js when everything is ready
-      setTimeout(() => {
-        const loading = document.getElementById('loading');
-        if (loading && loading.style.display !== 'none') loading.style.display = 'none';
-      }, 5000);
-    });
+  <script type="module" src="main.js">
+    console.log('Main script loaded');
   </script>
-<script type="module">
-console.log('Module script system check');
-import('./spaceEnvironment.js').then(() => {
-  console.log('spaceEnvironment.js dynamically imported successfully');
-}).catch(err => {
-  console.error('Error importing spaceEnvironment.js:', err);
-});
-import('./uiManager.js').then(() => {
-  console.log('uiManager.js dynamically imported successfully');
-}).catch(err => {
-  console.error('Error importing uiManager.js:', err);
-});
-</script>
 </body>
 </html>
