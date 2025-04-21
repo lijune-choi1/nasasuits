@@ -81,121 +81,126 @@ class NASASuitsApp {
     }
   }
   
-  setupVRSessionListeners() {
-    const spaceInterface = document.getElementById('space-interface');
-    const actionButtons = document.getElementById('vr-action-buttons');
-    let actionButtonsVisible = false;
-    let pinchCount = 0;
-    let lastPinchTime = 0;
-  
-    // Ensure the interface is always visible and positioned correctly
-    const lockInterfacePosition = () => {
-      if (spaceInterface) {
-        spaceInterface.style.cssText = `
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          z-index: 10000 !important;
-          pointer-events: none !important;
-          display: block !important;
-          opacity: 1 !important;
-          visibility: visible !important;
-        `;
-      }
-    };
-  
-    // Toggle action buttons visibility
-    const toggleActionButtons = () => {
-      if (actionButtons) {
-        actionButtonsVisible = !actionButtonsVisible;
-        actionButtons.style.display = actionButtonsVisible ? 'flex' : 'none';
-      }
-    };
-  
-       // Keyboard control for desktop testing
-      window.addEventListener('keydown', (event) => {
-        // Check if not in VR mode
-        if (!this.renderer.xr.isPresenting && event.code === 'KeyA') {
-          toggleActionButtons();
-        }
-      });
-  
-    // VR Pinch gesture detection
-    const checkPinchGesture = (hand) => {
-      if (!hand || !hand.joints) return false;
+  // Replace the setupVRSessionListeners method in main.js with this updated version
+setupVRSessionListeners() {
+  const spaceInterface = document.getElementById('space-interface');
+  const actionButtons = document.getElementById('vr-action-buttons'); // Proper reference to the element
+  let actionButtonsVisible = false;
+  let pinchCount = 0;
+  let lastPinchTime = 0;
+
+  // Ensure the interface is always visible and positioned correctly
+  const lockInterfacePosition = () => {
+    if (spaceInterface) {
+      spaceInterface.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 10000 !important;
+        pointer-events: none !important;
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      `;
+    }
+  };
+
+  // Toggle action buttons visibility
+  const toggleActionButtons = () => {
+    if (actionButtons) {
+      actionButtonsVisible = !actionButtonsVisible;
+      actionButtons.style.display = actionButtonsVisible ? 'flex' : 'none';
+      console.log('Action buttons toggled:', actionButtonsVisible ? 'visible' : 'hidden');
+    } else {
+      console.error('Action buttons element not found!');
+    }
+  };
+
+  // Keyboard control for desktop testing
+  window.addEventListener('keydown', (event) => {
+    // Check if not in VR mode
+    if (!this.renderer.xr.isPresenting && event.code === 'KeyA') {
+      console.log('Key A pressed');
+      toggleActionButtons();
+    }
+  });
+
+  // VR Pinch gesture detection
+  const checkPinchGesture = (hand) => {
+    if (!hand || !hand.joints) return false;
+    
+    const indexTip = hand.joints['index-finger-tip'];
+    const middleTip = hand.joints['middle-finger-tip'];
+    
+    if (!indexTip || !middleTip) return false;
+    
+    const distance = indexTip.position.distanceTo(middleTip.position);
+    return distance < 0.02; // 2cm threshold
+  };
+
+  // VR Session Start
+  this.renderer.xr.addEventListener('sessionstart', () => {
+    console.log('VR Session Started');
+    lockInterfacePosition();
+
+    // Hand tracking for gesture control
+    const session = this.renderer.xr.getSession();
+    
+    const gestureHandler = () => {
+      const hands = session.inputSources.filter(source => source.hand);
       
-      const indexTip = hand.joints['index-finger-tip'];
-      const middleTip = hand.joints['middle-finger-tip'];
-      
-      if (!indexTip || !middleTip) return false;
-      
-      const distance = indexTip.position.distanceTo(middleTip.position);
-      return distance < 0.02; // 2cm threshold
-    };
-  
-    // VR Session Start
-    this.renderer.xr.addEventListener('sessionstart', () => {
-      console.log('VR Session Started');
-      lockInterfacePosition();
-  
-      // Hand tracking for gesture control
-      const session = this.renderer.xr.getSession();
-      
-      const gestureHandler = () => {
-        const hands = session.inputSources.filter(source => source.hand);
+      hands.forEach(hand => {
+        const isPinching = checkPinchGesture(hand.hand);
         
-        hands.forEach(hand => {
-          const isPinching = checkPinchGesture(hand.hand);
-          
-          if (isPinching) {
-            const now = Date.now();
-            if (now - lastPinchTime > 500) { // Prevent rapid firing
-              pinchCount++;
-              lastPinchTime = now;
-              
-              if (pinchCount === 2) {
-                toggleActionButtons();
-                pinchCount = 0;
-              }
+        if (isPinching) {
+          const now = Date.now();
+          if (now - lastPinchTime > 500) { // Prevent rapid firing
+            pinchCount++;
+            lastPinchTime = now;
+            
+            if (pinchCount === 2) {
+              toggleActionButtons();
+              pinchCount = 0;
             }
           }
-        });
-      };
-  
-      // Use animation frame for continuous gesture tracking
-      const trackGestures = () => {
-        if (this.renderer.xr.isPresenting) {
-          gestureHandler();
-          this.gestureTrackingFrame = requestAnimationFrame(trackGestures);
         }
-      };
-  
-      trackGestures();
-    });
-  
-    // VR Session End
-    this.renderer.xr.addEventListener('sessionend', () => {
-      console.log('VR Session Ended');
-      lockInterfacePosition();
-      
-      // Cancel gesture tracking
-      if (this.gestureTrackingFrame) {
-        cancelAnimationFrame(this.gestureTrackingFrame);
+      });
+    };
+
+    // Use animation frame for continuous gesture tracking
+    const trackGestures = () => {
+      if (this.renderer.xr.isPresenting) {
+        gestureHandler();
+        this.gestureTrackingFrame = requestAnimationFrame(trackGestures);
       }
-      
-      // Reset button visibility
-      if (actionButtons) {
-        actionButtons.style.display = 'none';
-      }
-      actionButtonsVisible = false;
-      pinchCount = 0;
-    });
-  
-    // Initial lock (for non-VR mode as well)
+    };
+
+    trackGestures();
+  });
+
+  // VR Session End
+  this.renderer.xr.addEventListener('sessionend', () => {
+    console.log('VR Session Ended');
     lockInterfacePosition();
-  }
+    
+    // Cancel gesture tracking
+    if (this.gestureTrackingFrame) {
+      cancelAnimationFrame(this.gestureTrackingFrame);
+    }
+    
+    // Reset button visibility
+    if (actionButtons) {
+      actionButtons.style.display = 'none';
+    }
+    actionButtonsVisible = false;
+    pinchCount = 0;
+  });
+
+  // Initial lock (for non-VR mode as well)
+  lockInterfacePosition();
+}
 
   // Animation loop
   animate() {
