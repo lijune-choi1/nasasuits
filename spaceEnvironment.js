@@ -1027,6 +1027,484 @@ handlePinchGesture(hand, isPinching, isLeft) {
       }
     }
   }
+  // Add this to your SpaceEnvironment class
+
+// Keyboard event listener for map modal
+addKeyboardListeners() {
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyM') {
+        console.log('Map key (M) pressed - toggling map modal');
+        this.toggleMapModal();
+      }
+    });
+  }
+  
+  // Create the map modal
+  createMapModal() {
+    console.log('Creating map modal window');
+    
+    // Create container for map modal
+    this.mapModal = new THREE.Group();
+    this.mapModal.visible = false; // Initially hidden
+    this.uiRoot.add(this.mapModal);
+    
+    // Modal dimensions
+    const modalWidth = 1.2;
+    const modalHeight = 0.9;
+    
+    // Create modal background with a dark blue color
+    const bgGeometry = new THREE.PlaneGeometry(modalWidth, modalHeight);
+    const bgMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x1a2736,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const modalBg = new THREE.Mesh(bgGeometry, bgMaterial);
+    modalBg.renderOrder = 20000;
+    this.mapModal.add(modalBg);
+    
+    // Add header with title
+    this.addModalHeader(modalWidth, modalHeight);
+    
+    // Add sidebar with points
+    this.addModalSidebar(modalWidth, modalHeight);
+    
+    // Add main map area
+    this.addModalMap(modalWidth, modalHeight);
+    
+    // Add footer with stats
+    this.addModalFooter(modalWidth, modalHeight);
+    
+    // Position the modal in front of the user
+    this.mapModal.position.set(0, 0, -0.5);
+    
+    // Make sure every element renders on top
+    this.mapModal.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.renderOrder = 20000;
+        if (obj.material) {
+          obj.material.depthTest = false;
+          obj.material.depthWrite = false;
+          obj.material.needsUpdate = true;
+        }
+      }
+    });
+    
+    console.log(`Created map modal with ${this.mapModal.children.length} elements`);
+    
+    return this.mapModal;
+  }
+  
+  // Add header section to modal
+  addModalHeader(modalWidth, modalHeight) {
+    // Title
+    const titleTexture = this.createTextTexture('Maps', { 
+      textColor: '#FFFFFF',
+      fontSize: 32,
+      backgroundColor: 'transparent',
+      width: 256,
+      height: 64
+    });
+    
+    const titleGeometry = new THREE.PlaneGeometry(0.3, 0.06);
+    const titleMaterial = new THREE.MeshBasicMaterial({
+      map: titleTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
+    titleMesh.position.set(0, modalHeight/2 - 0.05, 0.01);
+    titleMesh.renderOrder = 20001;
+    this.mapModal.add(titleMesh);
+    
+    // Close button
+    const closeTexture = this.createTextTexture('×', { 
+      textColor: '#FFFFFF',
+      fontSize: 48,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      width: 64,
+      height: 64
+    });
+    
+    const closeGeometry = new THREE.PlaneGeometry(0.05, 0.05);
+    const closeMaterial = new THREE.MeshBasicMaterial({
+      map: closeTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const closeMesh = new THREE.Mesh(closeGeometry, closeMaterial);
+    closeMesh.position.set(modalWidth/2 - 0.07, modalHeight/2 - 0.05, 0.01);
+    closeMesh.renderOrder = 20001;
+    this.mapModal.add(closeMesh);
+    
+    // Minimize button
+    const minTexture = this.createTextTexture('−', { 
+      textColor: '#FFFFFF',
+      fontSize: 48,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      width: 64,
+      height: 64
+    });
+    
+    const minGeometry = new THREE.PlaneGeometry(0.05, 0.05);
+    const minMaterial = new THREE.MeshBasicMaterial({
+      map: minTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const minMesh = new THREE.Mesh(minGeometry, minMaterial);
+    minMesh.position.set(modalWidth/2 - 0.14, modalHeight/2 - 0.05, 0.01);
+    minMesh.renderOrder = 20001;
+    this.mapModal.add(minMesh);
+  }
+  
+  // Add sidebar with points to modal
+  addModalSidebar(modalWidth, modalHeight) {
+    // Sidebar background
+    const sidebarWidth = 0.3;
+    const sidebarGeometry = new THREE.PlaneGeometry(sidebarWidth, modalHeight - 0.1);
+    const sidebarMaterial = new THREE.MeshBasicMaterial({
+      color: 0x1e2d3b,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const sidebarMesh = new THREE.Mesh(sidebarGeometry, sidebarMaterial);
+    sidebarMesh.position.set(-modalWidth/2 + sidebarWidth/2, -0.05, 0.005);
+    sidebarMesh.renderOrder = 20002;
+    this.mapModal.add(sidebarMesh);
+    
+    // Add location points
+    const points = [
+      { icon: "◉", label: "Point A" },
+      { icon: "◉", label: "Point B" },
+      { icon: "+", label: "Add Point" }
+    ];
+    
+    points.forEach((point, index) => {
+      // Point item background
+      const itemGeometry = new THREE.PlaneGeometry(sidebarWidth - 0.04, 0.06);
+      const itemMaterial = new THREE.MeshBasicMaterial({
+        color: 0x2c3e50,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const itemMesh = new THREE.Mesh(itemGeometry, itemMaterial);
+      itemMesh.position.set(-modalWidth/2 + sidebarWidth/2, modalHeight/2 - 0.15 - (index * 0.08), 0.01);
+      itemMesh.renderOrder = 20003;
+      this.mapModal.add(itemMesh);
+      
+      // Point label
+      const pointTexture = this.createTextTexture(`${point.icon} ${point.label}`, { 
+        textColor: '#FFFFFF',
+        fontSize: 24,
+        backgroundColor: 'transparent',
+        width: 256,
+        height: 48
+      });
+      
+      const pointGeometry = new THREE.PlaneGeometry(sidebarWidth - 0.06, 0.05);
+      const pointMaterial = new THREE.MeshBasicMaterial({
+        map: pointTexture,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
+      pointMesh.position.set(0, 0, 0.005);
+      pointMesh.renderOrder = 20004;
+      itemMesh.add(pointMesh);
+    });
+  }
+  
+  // Add main map area to modal
+  addModalMap(modalWidth, modalHeight) {
+    // Create topographic map texture
+    const mapTexture = this.createTopographicMapTexture();
+    
+    // Map area
+    const mapWidth = modalWidth - 0.35;
+    const mapHeight = modalHeight - 0.2;
+    const mapGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
+    const mapMaterial = new THREE.MeshBasicMaterial({
+      map: mapTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const mapMesh = new THREE.Mesh(mapGeometry, mapMaterial);
+    mapMesh.position.set(modalWidth/2 - mapWidth/2 - 0.025, 0, 0.01);
+    mapMesh.renderOrder = 20003;
+    this.mapModal.add(mapMesh);
+    
+    // Add zoom controls
+    this.addZoomControls(modalWidth, modalHeight);
+  }
+  
+  // Create topographic map texture
+  createTopographicMapTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#1e3040';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw topographic lines
+    ctx.strokeStyle = '#38586c';
+    ctx.lineWidth = 1;
+    
+    // Create contour lines
+    for (let i = 0; i < 30; i++) {
+      const yOffset = i * 35;
+      
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x += 5) {
+        // Create wavy contour lines
+        const noise1 = Math.sin(x * 0.01) * 20;
+        const noise2 = Math.cos(x * 0.05) * 10;
+        const noise3 = Math.sin(x * 0.002 + i * 0.5) * 40;
+        
+        const y = yOffset + noise1 + noise2 + noise3;
+        
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+    }
+    
+    // Draw a path line
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width * 0.8, canvas.height * 0.8);
+    ctx.lineTo(canvas.width * 0.6, canvas.height * 0.6);
+    ctx.lineTo(canvas.width * 0.3, canvas.height * 0.5);
+    ctx.stroke();
+    
+    // Draw dotted future path
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 10]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width * 0.3, canvas.height * 0.5);
+    ctx.bezierCurveTo(
+      canvas.width * 0.2, canvas.height * 0.4,
+      canvas.width * 0.15, canvas.height * 0.3, 
+      canvas.width * 0.2, canvas.height * 0.2
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Add destinations
+    // Start point (blue dot)
+    ctx.fillStyle = '#3498db';
+    ctx.beginPath();
+    ctx.arc(canvas.width * 0.8, canvas.height * 0.8, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Current point (white dot)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(canvas.width * 0.6, canvas.height * 0.6, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Next point (blue dot)
+    ctx.fillStyle = '#3498db';
+    ctx.beginPath();
+    ctx.arc(canvas.width * 0.3, canvas.height * 0.5, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // End point (yellow dot)
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.arc(canvas.width * 0.2, canvas.height * 0.2, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Add NASA Base label
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('NASA Base', canvas.width * 0.2, canvas.height * 0.2 - 15);
+    
+    // Add Start Point label
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#AAAAAA';
+    ctx.fillText('Start Point', canvas.width * 0.8, canvas.height * 0.8 - 15);
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('Point A', canvas.width * 0.8, canvas.height * 0.8 - 30);
+    
+    // Create texture
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }
+  
+  // Add zoom controls to map
+  addZoomControls(modalWidth, modalHeight) {
+    // Zoom in button
+    const zoomInTexture = this.createTextTexture('+', { 
+      textColor: '#FFFFFF',
+      fontSize: 32,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      width: 48,
+      height: 48
+    });
+    
+    const zoomInGeometry = new THREE.PlaneGeometry(0.04, 0.04);
+    const zoomInMaterial = new THREE.MeshBasicMaterial({
+      map: zoomInTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const zoomInMesh = new THREE.Mesh(zoomInGeometry, zoomInMaterial);
+    zoomInMesh.position.set(modalWidth/2 - 0.07, modalHeight/2 - 0.2, 0.01);
+    zoomInMesh.renderOrder = 20005;
+    this.mapModal.add(zoomInMesh);
+    
+    // Zoom out button
+    const zoomOutTexture = this.createTextTexture('-', { 
+      textColor: '#FFFFFF',
+      fontSize: 32,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      width: 48,
+      height: 48
+    });
+    
+    const zoomOutGeometry = new THREE.PlaneGeometry(0.04, 0.04);
+    const zoomOutMaterial = new THREE.MeshBasicMaterial({
+      map: zoomOutTexture,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const zoomOutMesh = new THREE.Mesh(zoomOutGeometry, zoomOutMaterial);
+    zoomOutMesh.position.set(modalWidth/2 - 0.07, modalHeight/2 - 0.25, 0.01);
+    zoomOutMesh.renderOrder = 20005;
+    this.mapModal.add(zoomOutMesh);
+  }
+  
+  // Add footer with stats to modal
+  addModalFooter(modalWidth, modalHeight) {
+    // Footer background
+    const footerGeometry = new THREE.PlaneGeometry(modalWidth - 0.05, 0.06);
+    const footerMaterial = new THREE.MeshBasicMaterial({
+      color: 0x2c3e50,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const footerMesh = new THREE.Mesh(footerGeometry, footerMaterial);
+    footerMesh.position.set(0, -modalHeight/2 + 0.04, 0.01);
+    footerMesh.renderOrder = 20002;
+    this.mapModal.add(footerMesh);
+    
+    // Add stats
+    const stats = [
+      { label: 'Total Distance', value: '50m' },
+      { label: 'Remaining Distance', value: '20m' },
+      { label: 'Expected Duration', value: '00:02:03' },
+      { label: 'Time Left', value: '11:00:48' }
+    ];
+    
+    stats.forEach((stat, index) => {
+      const offset = ((index - 1.5) * 0.25);
+      
+      // Label
+      const labelTexture = this.createTextTexture(stat.label, { 
+        textColor: '#AAAAAA',
+        fontSize: 14,
+        backgroundColor: 'transparent',
+        width: 200,
+        height: 24
+      });
+      
+      const labelGeometry = new THREE.PlaneGeometry(0.2, 0.02);
+      const labelMaterial = new THREE.MeshBasicMaterial({
+        map: labelTexture,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+      labelMesh.position.set(offset, -modalHeight/2 + 0.05, 0.01);
+      labelMesh.renderOrder = 20003;
+      this.mapModal.add(labelMesh);
+      
+      // Value
+      const valueTexture = this.createTextTexture(stat.value, { 
+        textColor: '#FFFFFF',
+        fontSize: 16,
+        backgroundColor: 'transparent',
+        width: 120,
+        height: 24
+      });
+      
+      const valueGeometry = new THREE.PlaneGeometry(0.1, 0.02);
+      const valueMaterial = new THREE.MeshBasicMaterial({
+        map: valueTexture,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const valueMesh = new THREE.Mesh(valueGeometry, valueMaterial);
+      valueMesh.position.set(offset, -modalHeight/2 + 0.03, 0.01);
+      valueMesh.renderOrder = 20003;
+      this.mapModal.add(valueMesh);
+    });
+  }
+  
+  // Toggle map modal visibility
+  toggleMapModal() {
+    // Create map modal if it doesn't exist yet
+    if (!this.mapModal) {
+      this.createMapModal();
+    }
+    
+    // Toggle visibility
+    this.mapModal.visible = !this.mapModal.visible;
+    console.log('Map modal visibility:', this.mapModal.visible ? 'visible' : 'hidden');
+    
+    // If showing, update position
+    if (this.mapModal.visible) {
+      this.updateUIPosition();
+    }
+  }
   
   update() {
     // Earth slow rotation
