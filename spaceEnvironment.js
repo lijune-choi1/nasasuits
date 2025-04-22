@@ -939,7 +939,7 @@ createActionButtons() {
     
     // Position the menu in a good location
     this.actionButtonsMenu.position.set(0, -0.1, -0.4);
-    
+    console.log('actionbuttonsaremade');
     return this.actionButtonsMenu;
   }
   
@@ -963,12 +963,13 @@ createActionButtons() {
     if (this.actionButtonsMenu.visible) {
       this.updateUIPosition();
     }
-    
+    console.log('toggleactionbuttons');
+
     return this.actionButtonsMenu.visible;
   }
   
-  // Update your handlePinchGesture method to toggle the action menu on left hand pinch
-  handlePinchGesture(hand, isPinching, isLeft) {
+  // Enhanced handlePinchGesture with extra logging
+handlePinchGesture(hand, isPinching, isLeft) {
     const indicator = isLeft ? this.pinchIndicatorLeft : this.pinchIndicatorRight;
     
     if (isPinching) {
@@ -989,14 +990,30 @@ createActionButtons() {
         const now = Date.now();
         if (!this.isPinching && now - this.lastPinchTime > 500) {
           // Pinch started
-          console.log('Pinch detected');
+          console.log('Pinch detected from ' + (isLeft ? 'LEFT' : 'RIGHT') + ' hand');
           this.isPinching = true;
           
           // Toggle action buttons on left hand pinch
           if (isLeft) {
-            this.toggleActionButtons();
+            console.log('LEFT hand pinch - attempting to toggle action buttons');
+            // Force the creation of action buttons if they don't exist
+            if (!this.actionButtonsMenu) {
+              console.log('Creating action buttons for the first time');
+              this.createActionButtons();
+            }
+            
+            // Toggle visibility directly
+            if (this.actionButtonsMenu) {
+              this.actionButtonsMenu.visible = !this.actionButtonsMenu.visible;
+              console.log('Action buttons visibility manually set to: ' + 
+                         (this.actionButtonsMenu.visible ? 'VISIBLE' : 'HIDDEN'));
+              
+              // Force position update
+              this.updateUIPosition();
+            } else {
+              console.error('Action buttons menu still not created!');
+            }
           }
-          // You could add other interactions for right hand pinch if desired
         }
       }
     } else {
@@ -1011,7 +1028,6 @@ createActionButtons() {
     }
   }
   
-  // Main update method called each frame
   update() {
     // Earth slow rotation
     if (this.earth) {
@@ -1021,6 +1037,12 @@ createActionButtons() {
     // Update controls (when not in VR)
     if (this.controls) {
       this.controls.update();
+    }
+    
+    // Make sure action buttons are created
+    if (!this.actionButtonsMenu) {
+      console.log('Creating action buttons in update loop');
+      this.createActionButtons();
     }
     
     // Update UI position to follow camera
