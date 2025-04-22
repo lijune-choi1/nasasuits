@@ -778,70 +778,58 @@ class SpaceEnvironment {
     return this.mapWindowVisible;
   }
   
-  // Update UI position
-  updateUIPosition() {
+  // Update UI position to follow the camera in both VR and non-VR modes
+updateUIPosition() {
     if (!this.uiRoot) return;
     
-    // Get camera position and direction
-    const cameraPosition = this.camera.position.clone();
-    const cameraDirection = new THREE.Vector3(0, 0, -1);
-    cameraDirection.applyQuaternion(this.camera.quaternion);
-    
-    // Position UI in front of camera
-    const uiDistance = 0.3; // 30cm in front (closer for better visibility)
-    const uiPosition = cameraPosition.clone().add(
-      cameraDirection.multiplyScalar(uiDistance)
-    );
-    
-    // Update UI position
-    this.uiRoot.position.copy(uiPosition);
-    
-    // Make UI face the camera
-    this.uiRoot.quaternion.copy(this.camera.quaternion);
-  }
-  
-  // Debug UI function
-  debugUI() {
-    console.log('*** UI DEBUG INFO ***');
-    console.log('UI root exists:', !!this.uiRoot);
-    console.log('UI root visible:', this.uiRoot ? this.uiRoot.visible : 'N/A');
-    console.log('UI root children count:', this.uiRoot ? this.uiRoot.children.length : 'N/A');
-    console.log('UI root position:', this.uiRoot ? this.uiRoot.position : 'N/A');
-    
-    console.log('Map window exists:', !!this.mapWindow);
-    console.log('Map window visible:', this.mapWindow ? this.mapWindow.visible : 'N/A');
-    console.log('Map window children count:', this.mapWindow ? this.mapWindow.children.length : 'N/A');
-    console.log('Map window position:', this.mapWindow ? this.mapWindow.position : 'N/A');
-    
-    console.log('Forcing UI to be visible...');
-    
-    // Force UI to be visible
-    if (this.uiRoot) {
-      this.uiRoot.visible = true;
+    if (this.renderer.xr.isPresenting) {
+      // When in VR mode, use the XR camera specifically
+      const xrCamera = this.renderer.xr.getCamera();
+      
+      // Get the current XR headset position and orientation
+      const vrCameraPos = new THREE.Vector3();
+      xrCamera.getWorldPosition(vrCameraPos);
+      
+      // Get a vector pointing forward from the VR headset
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyQuaternion(xrCamera.quaternion);
+      
+      // Position UI directly in front of the VR headset at fixed distance
+      const uiPosition = vrCameraPos.clone().add(forward.multiplyScalar(0.5));
+      this.uiRoot.position.copy(uiPosition);
+      
+      // Make the UI always face the user by matching the XR camera orientation
+      this.uiRoot.quaternion.copy(xrCamera.quaternion);
+      
+      // Force high render order and material settings in VR
       this.uiRoot.traverse((obj) => {
         if (obj.isMesh) {
           obj.renderOrder = 10000;
           if (obj.material) {
             obj.material.depthTest = false;
             obj.material.depthWrite = false;
-            obj.material.transparent = true;
-            obj.material.opacity = 1.0;
+            obj.material.side = THREE.DoubleSide;
             obj.material.needsUpdate = true;
           }
         }
       });
+    } else {
+      // Non-VR mode - use regular camera
+      const cameraPosition = this.camera.position.clone();
+      const cameraDirection = new THREE.Vector3(0, 0, -1);
+      cameraDirection.applyQuaternion(this.camera.quaternion);
       
-      // Force map window to be visible
-      if (this.mapWindow) {
-        this.mapWindow.visible = true;
-        this.mapWindowVisible = true;
-      }
+      // Position UI in front of camera
+      const uiPosition = cameraPosition.clone().add(
+        cameraDirection.multiplyScalar(0.3)
+      );
       
-      // Update position
-      this.updateUIPosition();
+      // Update UI position
+      this.uiRoot.position.copy(uiPosition);
+      
+      // Make UI face the camera
+      this.uiRoot.quaternion.copy(this.camera.quaternion);
     }
-    
-    console.log('*** END DEBUG INFO ***');
   }
   
   // Main update method called each frame
