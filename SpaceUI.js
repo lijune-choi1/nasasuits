@@ -1243,3 +1243,5 @@ class SpaceUI {
     });
   }
 }
+
+export default SpaceUI;
