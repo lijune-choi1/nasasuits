@@ -1184,7 +1184,52 @@ class SpaceUI {
     
     return statusGroup;
   }
-  
+  // Add this to your main.js or wherever you handle keyboard events
+
+// Function to create and handle procedure panel
+setupProcedurePanel() {
+    // Create procedure modal (initially hidden)
+    const procedureModal = ui.createProcedureModal('procedure-modal', {
+      title: 'EVA Egress',
+      subtitle: 'Connect UIA to DCU and Start Depress',
+      tasks: [
+        { id: 'task1', label: 'EV1 connect UIA', category: 'UIA', completed: false },
+        { id: 'task2', label: 'EV2 connect UIA', category: 'UIA', completed: false },
+        { id: 'task3', label: 'EV1 connect DCU', category: 'DCU', completed: false },
+        { id: 'task4', label: 'EV2 connect DCU', category: 'DCU', completed: false }
+      ],
+      visible: false
+    });
+    
+    // Create notification popup (initially hidden)
+    const notification = ui.createNotification('completion-notification', {
+      text: 'Task Completed',
+      backgroundColor: 0x2ecc71,
+      icon: '✓',
+      duration: 3000
+    });
+    
+    // Add keyboard listener for 'P' key to toggle procedure panel
+    window.addEventListener('keydown', (event) => {
+      // 'P' key toggles procedure panel
+      if (event.code === 'KeyP') {
+        console.log('Procedure key (P) pressed - toggling procedure panel');
+        procedureModal.toggle();
+      }
+      
+      // For testing: Complete tasks with number keys 1-4
+      if (event.code >= 'Digit1' && event.code <= 'Digit4') {
+        const taskIndex = parseInt(event.code.replace('Digit', '')) - 1;
+        const taskId = `task${taskIndex + 1}`;
+        
+        if (procedureModal.completeTask(taskId)) {
+          notification.show(`Task ${taskIndex + 1} Completed`);
+        }
+      }
+    });
+    
+    return { procedureModal, notification };
+  }
   /**
    * Update the UI position to follow the camera
    * @param {boolean} isVR - Whether currently in VR mode
