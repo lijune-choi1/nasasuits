@@ -59,6 +59,9 @@ class SpaceEnvironment {
     
     // Create map window (initially hidden)
     this.createMapWindow();
+
+    // Create action buttons menu (initially hidden)
+    this.createActionButtons();
     
     // Set high render order for all UI elements
     this.uiRoot.traverse((obj) => {
@@ -829,6 +832,182 @@ updateUIPosition() {
       
       // Make UI face the camera
       this.uiRoot.quaternion.copy(this.camera.quaternion);
+    }
+  }
+
+  // Add this to your SpaceEnvironment class to create the action buttons menu
+createActionButtons() {
+    // Create a container for the action buttons
+    this.actionButtonsMenu = new THREE.Group();
+    this.actionButtonsMenu.visible = false; // Initially hidden
+    this.uiRoot.add(this.actionButtonsMenu);
+    
+    // Define the buttons
+    const buttons = [
+      { icon: "⊞", label: "Maps", id: "maps" },
+      { icon: "≡", label: "Procedures", id: "procedures" },
+      { icon: "⛶", label: "Pictures", id: "pictures" },
+      { icon: "⏺", label: "Recording", id: "recording" }
+    ];
+    
+    // Create the background panel for buttons
+    const panelWidth = 0.8;
+    const panelHeight = 0.15;
+    
+    const bgGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight);
+    const bgMaterial = new THREE.MeshBasicMaterial({
+      color: 0x222222,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false,
+      side: THREE.DoubleSide
+    });
+    
+    const panel = new THREE.Mesh(bgGeometry, bgMaterial);
+    panel.renderOrder = 11000;
+    this.actionButtonsMenu.add(panel);
+    
+    // Create the individual buttons
+    const buttonWidth = 0.15;
+    const buttonSpacing = 0.17;
+    let startX = -buttonSpacing * 1.5; // Center the buttons
+    
+    buttons.forEach((button, index) => {
+      // Create button background
+      const buttonGeometry = new THREE.PlaneGeometry(buttonWidth, buttonWidth);
+      const buttonMaterial = new THREE.MeshBasicMaterial({
+        color: button.id === "maps" ? 0x444444 : 0x333333, // Highlight the Maps button
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
+      buttonMesh.position.set(startX + (buttonSpacing * index), 0, 0.01);
+      buttonMesh.renderOrder = 11001;
+      this.actionButtonsMenu.add(buttonMesh);
+      
+      // Add icon to button
+      const iconTexture = this.createTextTexture(button.icon, {
+        textColor: '#FFFFFF',
+        fontSize: 36,
+        backgroundColor: 'transparent',
+        width: 128,
+        height: 128
+      });
+      
+      const iconGeometry = new THREE.PlaneGeometry(buttonWidth * 0.6, buttonWidth * 0.6);
+      const iconMaterial = new THREE.MeshBasicMaterial({
+        map: iconTexture,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const iconMesh = new THREE.Mesh(iconGeometry, iconMaterial);
+      iconMesh.position.set(0, 0.02, 0.01);
+      iconMesh.renderOrder = 11002;
+      buttonMesh.add(iconMesh);
+      
+      // Add label under the icon
+      const labelTexture = this.createTextTexture(button.label, {
+        textColor: '#FFFFFF',
+        fontSize: 24,
+        backgroundColor: 'transparent',
+        width: 128,
+        height: 64
+      });
+      
+      const labelGeometry = new THREE.PlaneGeometry(buttonWidth, buttonWidth * 0.3);
+      const labelMaterial = new THREE.MeshBasicMaterial({
+        map: labelTexture,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide
+      });
+      
+      const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+      labelMesh.position.set(0, -0.05, 0.01);
+      labelMesh.renderOrder = 11002;
+      buttonMesh.add(labelMesh);
+      
+      // Store a reference to each button for interaction
+      buttonMesh.userData.id = button.id;
+      buttonMesh.userData.isActionButton = true;
+    });
+    
+    // Position the menu in a good location
+    this.actionButtonsMenu.position.set(0, -0.1, -0.4);
+    
+    return this.actionButtonsMenu;
+  }
+  
+  // Add this method to toggle the action buttons
+  toggleActionButtons(visible = null) {
+    if (!this.actionButtonsMenu) {
+      this.createActionButtons();
+    }
+    
+    if (visible === null) {
+      // Toggle if no specific state provided
+      this.actionButtonsMenu.visible = !this.actionButtonsMenu.visible;
+    } else {
+      // Set to specific state
+      this.actionButtonsMenu.visible = visible;
+    }
+    
+    console.log('Action buttons visibility:', this.actionButtonsMenu.visible ? 'visible' : 'hidden');
+    
+    // If showing, make sure they're positioned properly
+    if (this.actionButtonsMenu.visible) {
+      this.updateUIPosition();
+    }
+    
+    return this.actionButtonsMenu.visible;
+  }
+  
+  // Update your handlePinchGesture method to toggle the action menu on left hand pinch
+  handlePinchGesture(hand, isPinching, isLeft) {
+    const indicator = isLeft ? this.pinchIndicatorLeft : this.pinchIndicatorRight;
+    
+    if (isPinching) {
+      // Show indicator at midpoint of thumb and index
+      const indexTip = hand.joints['index-finger-tip'];
+      const thumbTip = hand.joints['thumb-tip'];
+      
+      if (indexTip && thumbTip) {
+        const midpoint = new THREE.Vector3().addVectors(
+          indexTip.position,
+          thumbTip.position
+        ).multiplyScalar(0.5);
+        
+        indicator.position.copy(midpoint);
+        indicator.visible = true;
+        
+        // Only trigger a single pinch event on initial pinch detection
+        const now = Date.now();
+        if (!this.isPinching && now - this.lastPinchTime > 500) {
+          // Pinch started
+          console.log('Pinch detected');
+          this.isPinching = true;
+          
+          // Toggle action buttons on left hand pinch
+          if (isLeft) {
+            this.toggleActionButtons();
+          }
+          // You could add other interactions for right hand pinch if desired
+        }
+      }
+    } else {
+      indicator.visible = false;
+      
+      if (this.isPinching) {
+        // Pinch ended
+        console.log('Pinch released');
+        this.isPinching = false;
+        this.lastPinchTime = Date.now();
+      }
     }
   }
   
